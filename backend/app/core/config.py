@@ -1,4 +1,3 @@
-import logging
 import secrets
 import warnings
 from typing import Annotated, Any, Literal, Self
@@ -12,20 +11,6 @@ from pydantic import (
 )
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-log_format = logging.Formatter("%(asctime)s : %(levelname)s - %(message)s")
-
-# root logger
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-
-# standard stream handler
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(log_format)
-root_logger.addHandler(stream_handler)
-
-logger = logging.getLogger(__name__)
-# TODO: remove logger configs
 
 
 def parse_cors(v: Any) -> list[str] | str:
