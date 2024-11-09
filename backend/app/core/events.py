@@ -13,6 +13,7 @@ from fastapi import FastAPI
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa ARG001
     """life span events"""
     try:
+        logging.info("lifespan start")
         yield
     finally:
         logging.info("lifespan shutdown")
