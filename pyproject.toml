@@ -18,6 +18,7 @@ dependencies = [
     "sqlmodel>=0.0.22",
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
+    "tenacity>=9.0.0",
 ]
 
 [dependency-groups]
