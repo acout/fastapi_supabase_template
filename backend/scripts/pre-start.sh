@@ -4,10 +4,15 @@ set -e
 set -x
 
 # Let the DB start
-python -m app.utils.pre_start
+python -m app.utils.test_pre_start
 
-# # Run migrations
-# alembic upgrade head
+# before migrations
+# alembic init
+# mkdir -p app/alembic/versions
+# alembic revision --autogenerate -m "initial commit"
 
-# # Create initial data in DB
-# python app/initial_data.py
+# Run migrations
+alembic upgrade head
+
+# Create initial data in DB
+python -m app.utils.init_data
