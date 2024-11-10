@@ -1,6 +1,6 @@
 [project]
 name = "app"
-dynamic = ["version"]
+version = "0.4.1"
 requires-python = ">=3.10"
 dependencies = [
     "uvicorn>=0.30.6",
@@ -13,6 +13,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
     "tenacity>=9.0.0",
+    "psycopg2-binary>=2.9.10",
 ]
 
 [dependency-groups]
@@ -26,10 +27,14 @@ dev = [
     "pytest>=8.3.2",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 ## Test
 [tool.mypy]
 strict = true
-exclude = ["venv", ".venv"]
+exclude = ["venv", ".venv", "alembic"]
 
 [tool.pytest.ini_options]
 # Set additional command line options for pytest=
@@ -68,7 +73,7 @@ exclude_lines = [
 ## Linter and formatter
 [tool.ruff]
 # cover and extend the default config in https=//docs.astral.sh/ruff/configuration/
-extend-exclude = [""]
+extend-exclude = ["alembic"]
 target-version = "py310"
 
 [tool.ruff.lint]
