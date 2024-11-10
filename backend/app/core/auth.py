@@ -3,11 +3,11 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from supabase import AsyncClientOptions
+from supabase._async.client import AsyncClient, create_client
 
 from app.core.config import settings
 from app.schemas.auth import UserIn
-from supabase._async.client import AsyncClient, create_client
-from supabase.lib.client_options import ClientOptions
 
 
 async def get_super_client() -> AsyncClient:
@@ -15,7 +15,7 @@ async def get_super_client() -> AsyncClient:
     super_client = await create_client(
         settings.SUPABASE_URL,
         settings.SUPABASE_KEY,
-        options=ClientOptions(postgrest_client_timeout=10, storage_client_timeout=10),
+        options=AsyncClientOptions(postgrest_client_timeout=10, storage_client_timeout=10),
     )
     if not super_client:
         raise HTTPException(status_code=500, detail="Super client not initialized")
