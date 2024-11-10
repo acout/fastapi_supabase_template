@@ -13,6 +13,7 @@ from app.core.config import settings
 
 logger = logging.getLogger("uvicorn")
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa ARG001
     """life span events"""
@@ -44,16 +45,22 @@ if settings.all_cors_origins:
 # Include the routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+
 # Logger
 def timestamp_log_config(uvicorn_log_config: dict[str, Any]) -> dict[str, Any]:
     """https://github.com/fastapi/fastapi/discussions/7457#discussioncomment-5565969"""
-    datefmt = '%d-%m-%Y %H:%M:%S'
-    formatters = uvicorn_log_config['formatters']
-    formatters['default']['fmt'] = '%(levelprefix)s [%(asctime)s] %(message)s'
-    formatters['access']['fmt'] = '%(levelprefix)s [%(asctime)s] %(client_addr)s - "%(request_line)s" %(status_code)s'
-    formatters['access']['datefmt'] = datefmt
-    formatters['default']['datefmt'] = datefmt
+    datefmt = "%d-%m-%Y %H:%M:%S"
+    formatters = uvicorn_log_config["formatters"]
+    formatters["default"]["fmt"] = "%(levelprefix)s [%(asctime)s] %(message)s"
+    formatters["access"]["fmt"] = (
+        '%(levelprefix)s [%(asctime)s] %(client_addr)s - "%(request_line)s" %(status_code)s'
+    )
+    formatters["access"]["datefmt"] = datefmt
+    formatters["default"]["datefmt"] = datefmt
     return uvicorn_log_config
 
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000,log_config=timestamp_log_config(LOGGING_CONFIG))
+    uvicorn.run(
+        app, host="0.0.0.0", port=8000, log_config=timestamp_log_config(LOGGING_CONFIG)
+    )
