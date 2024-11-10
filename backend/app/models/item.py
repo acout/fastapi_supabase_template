@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 from sqlmodel import Field, SQLModel
 
@@ -22,10 +23,11 @@ class ItemUpdate(ItemBase):
 # Database model, database table inferred from class name
 class Item(ItemBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    title: str = Field(max_length=255)
     owner_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+        foreign_key="auth.users.id", nullable=False, ondelete="CASCADE"
     )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # Properties to return via API, id is always required

@@ -15,7 +15,9 @@ async def get_super_client() -> AsyncClient:
     super_client = await create_client(
         settings.SUPABASE_URL,
         settings.SUPABASE_KEY,
-        options=AsyncClientOptions(postgrest_client_timeout=10, storage_client_timeout=10),
+        options=AsyncClientOptions(
+            postgrest_client_timeout=10, storage_client_timeout=10
+        ),
     )
     if not super_client:
         raise HTTPException(status_code=500, detail="Super client not initialized")
