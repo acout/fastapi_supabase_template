@@ -1,7 +1,8 @@
 import uuid
-from datetime import datetime, timezone
 
 from sqlmodel import Field, SQLModel
+
+from app.models.base import InDBBase
 
 
 # Shared properties
@@ -21,13 +22,8 @@ class ItemUpdate(ItemBase):
 
 
 # Database model, database table inferred from class name
-class Item(ItemBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    owner_id: uuid.UUID = Field(
-        foreign_key="auth.users.id", nullable=False, ondelete="CASCADE"
-    )
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+class Item(InDBBase, ItemBase, table=True):
+    pass
 
 
 # Properties to return via API, id is always required
