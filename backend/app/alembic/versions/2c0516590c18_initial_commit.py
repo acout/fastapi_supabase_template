@@ -1,18 +1,19 @@
-"""add_item_table
+"""initial commit
 
-Revision ID: ee4193e1c052
+Revision ID: 2c0516590c18
 Revises:
-Create Date: 2024-11-10 17:28:34.531937
+Create Date: 2024-11-11 13:59:36.474238
 
 """
 from typing import Sequence, Union
-import sqlmodel
+
 from alembic import op
+import sqlmodel
 import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ee4193e1c052'
+revision: str = '2c0516590c18'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,8 +32,6 @@ def upgrade() -> None:
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('owner_id', sa.Uuid(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['owner_id'], ['auth.users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
