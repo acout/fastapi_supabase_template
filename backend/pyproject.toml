@@ -18,7 +18,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "anyio>=4.4.0",
+    "anyio>=4.6.2.post1",
     "coverage>=7.6.1",
     "faker>=28.0.0",
     "mypy>=1.13.0",
