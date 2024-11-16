@@ -10,7 +10,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v4
         with:
           # get full git commit to adjust for git-revision-date-localized plugin
           fetch-depth: 0
@@ -23,12 +23,11 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-
-      - name: install dependencies and deploy
-        run: |
-          uv sync --only-group docs
-          uv run mkdocs gh-deploy --force
+          cache-dependency-glob: ""
+      - name: deploy github page
+        run: bash docs.sh deploy
 
 # Reference
 # 1. https://squidfunk.github.io/mkdocs-material/publishing-your-site/
 # 2. https://github.com/Kludex/python-template/blob/main/.github/workflows/docs.yml
+# 3. https://github.com/astral-sh/setup-uv/tree/v3/
