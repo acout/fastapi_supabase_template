@@ -2,10 +2,9 @@
 # `pre-commit install` to set up the git hook scripts
 # `pre-commit autoupdate` to update repos
 # `pre-commit run --all-files` run hooks for all file
-exclude: (^|/)\..* # exclude hidden files or folder
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.2.0
+    rev: v5.0.0
     hooks:
       - id: check-toml
       - id: check-yaml
@@ -28,20 +27,22 @@ repos:
         args: [--write-changes]
     # lint and format
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.8
+    rev: v0.9.2
     hooks:
+      # Run the linter.
       - id: ruff
         args: [ --fix ]
+      # Run the formatter.
       - id: ruff-format
-  # - repo: https://github.com/hadolint/hadolint
-  #   rev: v2.12.0
-  #   hooks:
-  #     - id: hadolint
-  #       name: Lint Dockerfiles
-  #       description: Runs hadolint to lint Dockerfiles
-  #       language: system
-  #       types: ["dockerfile"]
-  #       entry: hadolint
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.13.1-beta
+    hooks:
+      - id: hadolint
+        name: Lint Dockerfiles
+        description: Runs hadolint to lint Dockerfiles
+        language: system
+        types: ["dockerfile"]
+        entry: hadolint
 ci:
   # Settings for the https://pre-commit.ci/ continuous integration service
   autofix_prs: True
