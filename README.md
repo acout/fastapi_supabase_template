@@ -41,3 +41,5 @@ scripts/test.sh
 # test connection of db and unit test
 scripts/tests-start.sh
 ```
+
+1. [x] test_main.py

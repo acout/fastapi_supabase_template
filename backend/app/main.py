@@ -10,6 +10,7 @@ from uvicorn.config import LOGGING_CONFIG
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.utils import custom_generate_unique_id
 
 logger = logging.getLogger("uvicorn")
 
@@ -29,8 +30,9 @@ app = FastAPI(
     lifespan=lifespan,
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    generate_unique_id_function=lambda router: f"{router.tags[0]}-{router.name}",
+    generate_unique_id_function=custom_generate_unique_id,
 )
+
 
 # Set all CORS enabled origins
 if settings.all_cors_origins:
@@ -42,8 +44,14 @@ if settings.all_cors_origins:
         allow_headers=["*"],
     )
 
+
 # Include the routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+@app.get("/", tags=["root"])
+async def read_root() -> dict[str, str]:
+    return {"Hello": "World"}
 
 
 # Logger

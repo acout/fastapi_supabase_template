@@ -1,6 +1,7 @@
 import logging
 
 import pytest
+from httpx import AsyncClient
 
 from app.core.db import engine
 from app.utils.init_data import init as init_db
@@ -14,3 +15,10 @@ logger = logging.getLogger(__name__)
 async def test_init_db() -> None:
     await connect_db(engine)
     await init_db(engine)
+
+
+@pytest.mark.anyio
+async def test_root(client: AsyncClient) -> None:
+    response = await client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"Hello": "World"}
