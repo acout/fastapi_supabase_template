@@ -43,3 +43,4 @@ scripts/tests-start.sh
 ```
 
 1. [x] test_main.py
+2. [x] test_crud/

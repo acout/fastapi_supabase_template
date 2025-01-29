@@ -68,11 +68,3 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             await session.delete(obj)
             await session.commit()
         return obj
-
-    async def get_multi_by_owner(
-        self, session: AsyncSession, *, owner_id: uuid.UUID
-    ) -> Sequence[ModelType]:
-        """Get multiple records by owner"""
-        statement = select(self.model).where(self.model.owner_id == owner_id)
-        result = await session.exec(statement)
-        return result.all()
