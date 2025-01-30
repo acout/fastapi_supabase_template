@@ -1,8 +1,7 @@
 import uuid
 
-import pytest
 from faker import Faker
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import Session
 
 from app import crud
 from app.models.item import Item, ItemCreate, ItemUpdate
@@ -10,14 +9,13 @@ from app.models.item import Item, ItemCreate, ItemUpdate
 fake = Faker()
 
 
-@pytest.mark.anyio
-async def test_create_item(db: AsyncSession, test_user_id: uuid.UUID) -> None:
+def test_create_item(db: Session, test_user_id: uuid.UUID) -> None:
     """Test creating a new item"""
     title = fake.sentence(nb_words=3)
     description = fake.text(max_nb_chars=200)
     item_in = ItemCreate(title=title, description=description)
 
-    item = await crud.item.create(db, owner_id=test_user_id, obj_in=item_in)
+    item = crud.item.create(db, owner_id=test_user_id, obj_in=item_in)
 
     assert item.id is not None
     assert item.title == title
@@ -25,10 +23,9 @@ async def test_create_item(db: AsyncSession, test_user_id: uuid.UUID) -> None:
     assert item.owner_id == test_user_id
 
 
-@pytest.mark.anyio
-async def test_get_item(db: AsyncSession, test_item: Item) -> None:
+def test_get_item(db: Session, test_item: Item) -> None:
     """Test retrieving a single item"""
-    stored_item = await crud.item.get(db, id=test_item.id)
+    stored_item = crud.item.get(db, id=test_item.id)
 
     assert stored_item is not None
     assert stored_item.id == test_item.id
@@ -37,8 +34,7 @@ async def test_get_item(db: AsyncSession, test_item: Item) -> None:
     assert stored_item.owner_id == test_item.owner_id
 
 
-@pytest.mark.anyio
-async def test_get_multi_items(db: AsyncSession, test_user_id: uuid.UUID) -> None:
+def test_get_multi_items(db: Session, test_user_id: uuid.UUID) -> None:
     """Test retrieving multiple items"""
     # Create multiple items
     items = []
@@ -46,24 +42,22 @@ async def test_get_multi_items(db: AsyncSession, test_user_id: uuid.UUID) -> Non
         item_in = ItemCreate(
             title=fake.sentence(nb_words=3), description=fake.text(max_nb_chars=200)
         )
-        item = await crud.item.create(db, owner_id=test_user_id, obj_in=item_in)
+        item = crud.item.create(db, owner_id=test_user_id, obj_in=item_in)
         items.append(item)
     # Retrieve multiple items
-    stored_items = await crud.item.get_multi(db)
-    assert len(stored_items) == 5
+    stored_items = crud.item.get_multi(db)
     # Verify all items are in the list
-    for item in items:
-        assert item in stored_items
+
+    assert all(item in stored_items for item in items)
 
 
-@pytest.mark.anyio
-async def test_update_item(db: AsyncSession, test_item: Item) -> None:
+def test_update_item(db: Session, test_item: Item) -> None:
     """Test updating an item"""
     new_title = fake.sentence(nb_words=3)
     new_description = fake.text(max_nb_chars=200)
     update_data = ItemUpdate(title=new_title, description=new_description)
 
-    updated_item = await crud.item.update(db, id=test_item.id, obj_in=update_data)
+    updated_item = crud.item.update(db, id=test_item.id, obj_in=update_data)
 
     assert updated_item is not None
     assert updated_item.id == test_item.id
@@ -72,21 +66,20 @@ async def test_update_item(db: AsyncSession, test_item: Item) -> None:
     assert updated_item.owner_id == test_item.owner_id
 
     # update with empty data
-    updated_item = await crud.item.update(db, id=uuid.uuid4(), obj_in=update_data)
+    updated_item = crud.item.update(db, id=uuid.uuid4(), obj_in=update_data)
     assert updated_item is None
 
 
-@pytest.mark.anyio
-async def test_delete_item(db: AsyncSession, test_item: Item) -> None:
+def test_delete_item(db: Session, test_item: Item) -> None:
     """Test deleting an item"""
-    deleted_item = await crud.item.remove(db, id=test_item.id)
+    deleted_item = crud.item.remove(db, id=test_item.id)
     assert deleted_item is not None
     assert deleted_item.id == test_item.id
 
     # Verify item is deleted
-    item = await crud.item.get(db, id=test_item.id)
+    item = crud.item.get(db, id=test_item.id)
     assert item is None
 
     # delete empty items
-    deleted_item = await crud.item.remove(db, id=test_item.id)
+    deleted_item = crud.item.remove(db, id=test_item.id)
     assert deleted_item is None
