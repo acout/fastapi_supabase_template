@@ -25,11 +25,7 @@ jobs:
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-      - name: Install pg deps
-        run: sudo apt-get update && sudo apt-get install -y \
-          libpq-dev \
-          gcc \
-          && sudo rm -rf /var/lib/apt/lists/*
+      
       - name: Install Supabase
         run: brew install supabase/tap/supabase
 
