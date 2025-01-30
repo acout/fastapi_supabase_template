@@ -10,15 +10,15 @@ dependencies = [
     "supabase>=2.7.4",
     "fastapi[standard]>=0.112.2",
     "sqlmodel>=0.0.22",
-    "asyncpg>=0.30.0",
     "alembic>=1.14.0",
     "tenacity>=9.0.0",
     "psycopg2-binary>=2.9.10",
+    "psycopg>=3.2.4",
 ]
 
 [dependency-groups]
 dev = [
-    "anyio>=4.6.2.post1",
+    "anyio[trio]>=4.6.2.post1",
     "coverage>=7.6.1",
     "faker>=28.0.0",
     "mypy>=1.13.0",
@@ -38,13 +38,9 @@ strict = true
 exclude = ["venv", ".venv", "alembic"]
 
 [tool.pytest.ini_options]
-# Set additional command line options for pytest=
-# -r= show extra test summary info
-# X= show extra info on xfailed tests
-# s= don't capture stdout (allow print statements)
-# --strict-config= any warnings about configuration are treated as errors
-# --strict-markers= treat unregistered markers as errors
-addopts = "-rXs --strict-config --strict-markers"
+# Set additional command line options for pytest
+# Ref: https://docs.pytest.org/en/stable/reference/reference.html#command-line-flags
+addopts = "-rXs --strict-config --strict-markers --tb=short"
 xfail_strict = true         # Treat tests that are marked as xfail but pass as test failures
 filterwarnings = ["error"]  # Treat all warnings as errors
 pythonpath = "app"

@@ -1,8 +1,7 @@
-import asyncio
 import logging
 
-from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import Engine
+from sqlmodel import Session
 
 from app.core.db import engine, init_db
 
@@ -10,14 +9,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def init(db_ngine: AsyncEngine) -> None:
-    async with AsyncSession(db_ngine) as session:
-        await init_db(session)
+def init(db_engine: Engine) -> None:
+    with Session(db_engine) as session:
+        init_db(session)
 
 
 def main() -> None:
     logger.info("Creating initial data")
-    asyncio.run(init(engine))
+    init(engine)
     logger.info("Initial data created")
 
 

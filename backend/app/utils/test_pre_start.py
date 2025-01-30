@@ -1,9 +1,7 @@
-import asyncio
 import logging
 
-from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import Engine
+from sqlmodel import Session, select
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
 from app.core.db import engine
@@ -21,10 +19,11 @@ wait_seconds = 1
     before=before_log(logger, logging.INFO),
     after=after_log(logger, logging.WARN),
 )
-async def init(db_engine: AsyncEngine) -> None:
+def init(db_engine: Engine) -> None:
     try:
-        async with AsyncSession(db_engine) as session:
-            await session.exec(select(1))
+        with Session(db_engine) as session:
+            # Try to create session to check if DB is awake
+            session.exec(select(1))
     except Exception as e:
         logger.error(e)
         raise e
@@ -32,7 +31,7 @@ async def init(db_engine: AsyncEngine) -> None:
 
 def main() -> None:
     logger.info("Initializing service")
-    asyncio.run(init(engine))
+    init(engine)
     logger.info("Service finished initializing")
 
 
