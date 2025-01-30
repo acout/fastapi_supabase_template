@@ -38,7 +38,7 @@ cd backend
 scripts/pre-start.sh
 # unit test
 scripts/test.sh
-# test connection of db and unit test
+# test connection of db and test code
 scripts/tests-start.sh
 ```
 
