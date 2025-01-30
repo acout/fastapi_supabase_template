@@ -5,6 +5,13 @@ FROM python:3.12-slim-bookworm
 # Ref: https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUNBUFFERED
 ENV PYTHONUNBUFFERED=1
 
+# Install system dependencies including PostgreSQL client library
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends\
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
 # Change the working directory to the `app` directory
 WORKDIR /app
 
