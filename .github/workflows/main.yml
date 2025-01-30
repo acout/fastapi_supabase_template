@@ -22,8 +22,14 @@ jobs:
         with:
           enable-cache: true
       - name: Install brew
-        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+      - name: Install pg deps
+        run: apt-get update && apt-get install -y --no-install-recommends\
+          libpq-dev \
+          gcc \
+          && rm -rf /var/lib/apt/lists/*
       - name: Install Supabase
         run: brew install supabase/tap/supabase
 
