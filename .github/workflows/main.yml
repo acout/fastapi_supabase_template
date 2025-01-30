@@ -32,19 +32,12 @@ jobs:
           HOMEBREW_NO_INSTALL_CLEANUP=1
           brew install supabase/tap/supabase
           bash scripts/update-env.sh
-
-      - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
+          uv python install ${{ matrix.python-version }}
           cd backend
           uv sync --python ${{ matrix.python-version }} --all-extras --dev
-
-      - name: Run tests
-        run: |
           uv run bash scripts/pre-start.sh
           uv run bash scripts/tests-start.sh
+          
 
   release:
     name: Bump Version and Release
