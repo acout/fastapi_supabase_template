@@ -31,12 +31,7 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           HOMEBREW_NO_INSTALL_CLEANUP=1
           brew install supabase/tap/supabase
-
-      - name: Start supabase
-        run: supabase start
-
-      - name: Update .env
-        run: bash scripts/update-env.sh
+          bash scripts/update-env.sh
 
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
