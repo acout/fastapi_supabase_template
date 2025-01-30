@@ -1,14 +1,23 @@
 import logging
 
-import pytest
-from httpx import AsyncClient
+from fastapi.testclient import TestClient
+
+from app.utils.init_data import main as init_db
+from app.utils.test_pre_start import main as pre_start
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.anyio
-async def test_root(client: AsyncClient) -> None:
-    response = await client.get("/")
+def test_init_db() -> None:
+    init_db()
+
+
+def test_pre_start() -> None:
+    pre_start()
+
+
+def test_root(client: TestClient) -> None:
+    response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"Hello": "World"}

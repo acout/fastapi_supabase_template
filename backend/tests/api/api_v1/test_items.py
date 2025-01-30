@@ -1,115 +1,113 @@
-# # Additional assertions based on your application's logic
-# import pytest
-# from app.schemas import Token
-# from faker import Faker
-# from starlette.testclient import TestClient
+from faker import Faker
+from fastapi.testclient import TestClient
 
-# from supabase._async.client import AsyncClient
-# from tests.utils import get_auth_header
+from app.core.config import settings
+from app.models.item import Item, ItemCreate, ItemUpdate
+from app.schemas.auth import Token
+from tests.utils import get_auth_header
 
-
-# @pytest.mark.anyio
-# async def test_create_item(client: TestClient, token: Token) -> None:
-
-#     headers = get_auth_header(token.access_token)
-
-#     test_data = Faker().sentence()
+fake = Faker()
 
 
-#     response = client.post(
-#         "/api/v1/items/create-item", headers=headers, json={"test_data": test_data}
-#     )
-#     assert response.status_code == 200
-#     assert response.json()["test_data"] == test_data
+def test_create_item(client: TestClient, token: Token) -> None:
+    """Test create item endpoint"""
+    # Prepare test data
+    title = fake.sentence(nb_words=3)
+    description = fake.text(max_nb_chars=200)
+    item_in = ItemCreate(title=title, description=description)
+
+    # Make request
+    response = client.post(
+        f"{settings.API_V1_STR}/items/create-item",
+        headers=get_auth_header(token.access_token),
+        json=item_in.model_dump(),
+    )
+
+    # Assert response
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == title
+    assert data["description"] == description
+    assert "id" in data
+    assert "owner_id" in data
 
 
-# @pytest.mark.anyio
-# async def test_read_all_items(client: TestClient, token: Token) -> None:
-#     headers = get_auth_header(token.access_token)
+def test_get_item(client: TestClient, token: Token, test_item: Item) -> None:
+    """Test get item by id endpoint"""
+    # Make request
+    response = client.get(
+        f"{settings.API_V1_STR}/items/get-item/{test_item.id}",
+        headers=get_auth_header(token.access_token),
+    )
 
-#     response = client.get("/api/v1/items/read-all-item", headers=headers)
-#     assert response.status_code == 200
-#     assert isinstance(response.json(), list)
-
-
-# @pytest.mark.anyio
-# async def test_read_item_by_id(client: TestClient, token: Token) -> None:
-#     headers = get_auth_header(token.access_token)
-#     test_data = Faker().sentence()
-
-
-#     create_response = client.post(
-#         "/api/v1/items/create-item", headers=headers, json={"test_data": test_data}
-#     )
-#     assert create_response.status_code == 200
-#     created_item_id = create_response.json()["id"]
+    # Assert response
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(test_item.id)
+    assert data["title"] == test_item.title
+    assert data["description"] == test_item.description
+    assert data["owner_id"] == str(test_item.owner_id)
 
 
-#     read_response = client.get(
-#         f"/api/v1/items/get-by-id/{created_item_id}", headers=headers
-#     )
-#     assert read_response.status_code == 200
-#     assert read_response.json()["id"] == created_item_id
-#     assert read_response.json()["test_data"] == test_data
+def test_get_items(client: TestClient, token: Token, test_item: Item) -> None:
+    """Test get items list endpoint"""
+    # Make request
+    response = client.get(
+        f"{settings.API_V1_STR}/items/get-items",
+        headers=get_auth_header(token.access_token),
+    )
+
+    # Assert response
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) > 0
+
+    # Verify the test_item is in the response
+    item_ids = [item["id"] for item in data]
+    assert str(test_item.id) in item_ids
 
 
-# @pytest.mark.anyio
-# async def test_read_item_by_owner(
-#     client: TestClient, token: Token, db: AsyncClient
-# ) -> None:
-#     headers = get_auth_header(token.access_token)
-#     test_data = Faker().sentence()
+def test_update_item(client: TestClient, token: Token, test_item: Item) -> None:
+    """Test update item endpoint"""
+    # Prepare update data
+    new_title = fake.sentence(nb_words=3)
+    new_description = fake.text(max_nb_chars=200)
+    item_update = ItemUpdate(title=new_title, description=new_description)
 
-#     client.post(
-#         "/api/v1/items/create-item", headers=headers, json={"test_data": test_data}
-#     )
+    # Make request
+    response = client.put(
+        f"{settings.API_V1_STR}/items/update-item/{test_item.id}",
+        headers=get_auth_header(token.access_token),
+        json=item_update.model_dump(),
+    )
 
-#     user = await db.auth.get_user(jwt=token.access_token)
-#     user_id = user.user.id
-
-#     read_response = client.get("/api/v1/items/get-by-owner", headers=headers)
-#     assert read_response.status_code == 200
-#     items = read_response.json()
-#     assert isinstance(items, list)
-#     assert all(item["user_id"] == user_id for item in items)
-
-
-# @pytest.mark.anyio
-# async def test_update_item(client: TestClient, token: Token) -> None:
-#     headers = get_auth_header(token.access_token)
-#     test_data = Faker().sentence()
-#     create_response = client.post(
-#         "/api/v1/items/create-item", headers=headers, json={"test_data": test_data}
-#     )
-#     assert create_response.status_code == 200
-#     created_item = create_response.json()
-#     created_item_id = created_item["id"]
-#     updated_data = {"test_data": Faker().sentence(), "id": created_item_id}
-
-#     update_response = client.put(
-#         "/api/v1/items/update-item", headers=headers, json=updated_data
-#     )
-#     assert update_response.status_code == 200
-#     assert update_response.json()["test_data"] == updated_data["test_data"]
+    # Assert response
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(test_item.id)
+    assert data["title"] == new_title
+    assert data["description"] == new_description
+    assert data["owner_id"] == str(test_item.owner_id)
 
 
-# @pytest.mark.anyio
-# async def test_delete_item(client: TestClient, token: Token) -> None:
-#     headers = get_auth_header(token.access_token)
-#     test_data = Faker().sentence()
-#     create_response = client.post(
-#         "/api/v1/items/create-item", headers=headers, json={"test_data": test_data}
-#     )
-#     assert create_response.status_code == 200
-#     created_item_id = create_response.json()["id"]
+def test_delete_item(client: TestClient, token: Token, test_item) -> None:
+    """Test delete item endpoint"""
+    # Make delete request
+    response = client.delete(
+        f"{settings.API_V1_STR}/items/delete/{test_item.id}",
+        headers=get_auth_header(token.access_token),
+    )
 
-#     delete_response = client.delete(
-#         f"/api/v1/items/delete/{created_item_id}", headers=headers
-#     )
-#     assert delete_response.status_code == 200
+    # Assert delete response
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(test_item.id)
 
-#     get_response = client.get(
-#         f"/api/v1/items/get-by-id/{created_item_id}", headers=headers
-#     )
-#     assert get_response.status_code == 200
-#     assert get_response.json() is None
+    # Verify item is deleted by trying to get it
+    get_response = client.get(
+        f"{settings.API_V1_STR}/items/get-item/{test_item.id}",
+        headers=get_auth_header(token.access_token),
+    )
+    assert get_response.status_code == 200
+    assert get_response.json() is None
