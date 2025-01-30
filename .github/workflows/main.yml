@@ -21,24 +21,31 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
+      - name: Install brew
+        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+      - name: Install Supabase
+        run: brew install supabase/tap/supabase
+
+      - name: Start supabase
+        run: supabase start
+
+      - name: Update .env
+        run: bash scripts/update-env.sh
 
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --python ${{ matrix.python-version }} --all-extras --dev
+        run: |
+          cd backend
+          uv sync --python ${{ matrix.python-version }} --all-extras --dev
 
       - name: Run tests
-        run: uv run bash scripts/test.sh
+        run: |
+          uv run bash scripts/pre-start.sh
+          uv run bash scripts/tests-start.sh
 
-      - name: Run linters
-        run: uv run bash scripts/lint.sh
-
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   release:
     name: Bump Version and Release
     needs: test
