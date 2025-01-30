@@ -25,26 +25,19 @@ jobs:
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
       - name: Install Supabase
-        run: brew install supabase/tap/supabase
-
-      - name: Start supabase
-        run: supabase start
-
-      - name: Update .env
-        run: bash scripts/update-env.sh
-
-      - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
-
-      - name: Install dependencies
         run: |
+          echo >> /home/runner/.bashrc
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/runner/.bashrc
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          HOMEBREW_NO_INSTALL_CLEANUP=1
+          brew install supabase/tap/supabase
+          bash scripts/update-env.sh
+          uv python install ${{ matrix.python-version }}
           cd backend
           uv sync --python ${{ matrix.python-version }} --all-extras --dev
-
-      - name: Run tests
-        run: |
           uv run bash scripts/pre-start.sh
           uv run bash scripts/tests-start.sh
+
 
   release:
     name: Bump Version and Release
