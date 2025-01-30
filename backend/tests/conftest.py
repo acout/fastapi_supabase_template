@@ -4,6 +4,7 @@ from collections.abc import Generator
 import pytest
 from faker import Faker
 from fastapi.testclient import TestClient
+from gotrue import User
 from sqlmodel import Session, delete
 from supabase import Client, create_client
 
@@ -31,33 +32,39 @@ def client() -> Generator[TestClient, None, None]:
         yield c
 
 
-@pytest.fixture(scope="module")
-def super_client() -> Generator[Client, None]:
+@pytest.fixture(scope="session", autouse=True)
+def global_cleanup() -> Generator[None, None]:
+    yield
+    # Clean up all users
     super_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-    yield super_client
-    # clean users
     users = super_client.auth.admin.list_users()
     for user in users:
         super_client.auth.admin.delete_user(user.id)
+
+
+@pytest.fixture(scope="function")
+def super_client() -> Generator[Client, None]:
+    super_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    yield super_client
 
 
 fake = Faker()
 
 
 @pytest.fixture(scope="function")
-def test_user_id(super_client: Client) -> Generator[uuid.UUID, None]:
-    response = super_client.auth.admin.create_user(
+def test_user(super_client: Client) -> Generator[User, None]:
+    response = super_client.auth.sign_up(
         {"email": fake.email(), "password": "testpassword123"}
     )
-    yield uuid.UUID(response.user.id)
+    yield response.user
 
 
 @pytest.fixture(scope="function")
-def test_item(db: Session, test_user_id: uuid.UUID) -> Generator[Item, None]:
+def test_item(db: Session, test_user: User) -> Generator[Item, None]:
     item_in = ItemCreate(
         title=fake.sentence(nb_words=3), description=fake.text(max_nb_chars=200)
     )
-    yield crud.item.create(db, owner_id=test_user_id, obj_in=item_in)
+    yield crud.item.create(db, owner_id=uuid.UUID(test_user.id), obj_in=item_in)
 
 
 @pytest.fixture(scope="function")

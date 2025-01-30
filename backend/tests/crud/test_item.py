@@ -1,6 +1,7 @@
 import uuid
 
 from faker import Faker
+from gotrue import User
 from sqlmodel import Session
 
 from app import crud
@@ -9,18 +10,18 @@ from app.models.item import Item, ItemCreate, ItemUpdate
 fake = Faker()
 
 
-def test_create_item(db: Session, test_user_id: uuid.UUID) -> None:
+def test_create_item(db: Session, test_user: User) -> None:
     """Test creating a new item"""
     title = fake.sentence(nb_words=3)
     description = fake.text(max_nb_chars=200)
     item_in = ItemCreate(title=title, description=description)
 
-    item = crud.item.create(db, owner_id=test_user_id, obj_in=item_in)
+    item = crud.item.create(db, owner_id=uuid.UUID(test_user.id), obj_in=item_in)
 
     assert item.id is not None
     assert item.title == title
     assert item.description == description
-    assert item.owner_id == test_user_id
+    assert item.owner_id == uuid.UUID(test_user.id)
 
 
 def test_get_item(db: Session, test_item: Item) -> None:
@@ -34,7 +35,7 @@ def test_get_item(db: Session, test_item: Item) -> None:
     assert stored_item.owner_id == test_item.owner_id
 
 
-def test_get_multi_items(db: Session, test_user_id: uuid.UUID) -> None:
+def test_get_multi_items(db: Session, test_user: User) -> None:
     """Test retrieving multiple items"""
     # Create multiple items
     items = []
@@ -42,7 +43,7 @@ def test_get_multi_items(db: Session, test_user_id: uuid.UUID) -> None:
         item_in = ItemCreate(
             title=fake.sentence(nb_words=3), description=fake.text(max_nb_chars=200)
         )
-        item = crud.item.create(db, owner_id=test_user_id, obj_in=item_in)
+        item = crud.item.create(db, owner_id=uuid.UUID(test_user.id), obj_in=item_in)
         items.append(item)
     # Retrieve multiple items
     stored_items = crud.item.get_multi(db)
