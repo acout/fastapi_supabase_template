@@ -37,7 +37,6 @@ jobs:
           uv sync --python ${{ matrix.python-version }} --all-extras --dev
           uv run bash scripts/pre-start.sh
           uv run bash scripts/tests-start.sh
-          
 
   release:
     name: Bump Version and Release
