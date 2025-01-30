@@ -38,7 +38,6 @@ jobs:
           uv run bash scripts/pre-start.sh
           uv run bash scripts/tests-start.sh
 
-
   release:
     name: Bump Version and Release
     needs: test
