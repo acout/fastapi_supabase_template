@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # Service FastAPI (utilise le Dockerfile existant)
+  api:
+    build:
+      context: ./backend
+    ports:
+      - "8000:80"
+    env_file:
+      - .env
+    depends_on:
+      - supabase
+    network_mode: "host"  # Pour communiquer facilement avec Supabase
+
+  # Service Supabase (utilise la CLI Supabase existante)
+  supabase:
+    image: supabase/cli:latest
+    command: start
+    volumes:
+      - .:/workdir
+    network_mode: "host"  # Pour exposer tous les services Supabase

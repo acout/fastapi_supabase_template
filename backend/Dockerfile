@@ -5,12 +5,28 @@ FROM python:3.12-slim-bookworm
 # Ref: https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUNBUFFERED
 ENV PYTHONUNBUFFERED=1
 
+# Arguments for user creation - avec des valeurs par défaut nulles
+ARG USERNAME=""
+ARG USER_UID=1000
+ARG USER_GID=1000
+ARG BUILD_ENV="prod"
+
 # Install system dependencies including PostgreSQL client library
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends\
     libpq-dev \
     gcc \
+    sudo \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# Créer l'utilisateur seulement si USERNAME est défini et si BUILD_ENV=dev
+RUN if [ -n "$USERNAME" ] && [ "$BUILD_ENV" = "dev" ]; then \
+    groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME; \
+    fi
 
 # Change the working directory to the `app` directory
 WORKDIR /app
@@ -45,6 +61,14 @@ COPY . .
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync
+
+# Change ownership only if USERNAME is provided and BUILD_ENV=dev
+RUN if [ -n "$USERNAME" ] && [ "$BUILD_ENV" = "dev" ]; then \
+    chown -R $USERNAME:$USERNAME /app; \
+    fi
+
+# Switch to non-root user only in dev mode
+USER ${USERNAME:-root}
 
 # Set the default command
 # Ref: https://fastapi.tiangolo.com/deployment/docker/

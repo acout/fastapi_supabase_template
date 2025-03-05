@@ -1,0 +1,54 @@
+{
+    "name": "FastAPI Supabase Development",
+    // "dockerComposeFile": "../compose-ci.yaml",
+    // "service": "dev",
+    "build": {
+        "dockerfile": "../backend/Dockerfile",
+        "context": "..",
+        "args": {
+            "USERNAME": "vscode",
+            "USER_UID": "1000",
+            "USER_GID": "1000",
+            "BUILD_ENV": "dev"
+        }
+    },
+    "containerEnv": {
+        "PYTHONPATH": "/app"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "git.autofetch": true,
+                "git.autofetchPeriod": 3600,
+                "python.defaultInterpreterPath": "/app/.venv/bin/python",
+                "python.analysis.extraPaths": [
+                    "/app"
+                ],
+                "python.linting.enabled": true,
+                "python.linting.flake8Enabled": true,
+                "python.formatting.provider": "black",
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": true
+                }
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.black-formatter",
+                "ms-python.flake8",
+                "github.vscode-github-actions"
+            ]
+        }
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {
+            "version": "latest",
+            "ppa": true
+        }
+    },
+    "workspaceFolder": "/app",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+    "remoteUser": "vscode",
+    "postCreateCommand": "uv sync"
+}
