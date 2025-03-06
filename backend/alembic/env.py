@@ -3,9 +3,14 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
+import os
+from dotenv import load_dotenv
 
 from app.core.config import settings
 from app.models import *  # noqa: F403
+
+# Charger les variables d'environnement
+load_dotenv()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -65,20 +70,22 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    configuration = config.get_section(config.config_ini_section)
-    if configuration is None:
-        raise FileNotFoundError("alembic config is None!")
-    configuration["sqlalchemy.url"] = get_url()
+    # Utiliser l'URL de la base de données Supabase
+    url = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_SERVER')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+    
     connectable = engine_from_config(
-        configuration, prefix="sqlalchemy.", poolclass=pool.NullPool
+        {"sqlalchemy.url": url},
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
+            # Important : générer du SQL pur
+            render_as_batch=False,
             compare_type=True,
-            dialect_opts={"paramstyle": "named"},
         )
 
         with context.begin_transaction():

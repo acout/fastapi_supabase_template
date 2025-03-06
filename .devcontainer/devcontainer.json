@@ -3,7 +3,7 @@
     // "dockerComposeFile": "../compose-ci.yaml",
     // "service": "dev",
     "build": {
-        "dockerfile": "../backend/Dockerfile",
+        "dockerfile": "../Dockerfile",
         "context": "..",
         "args": {
             "USERNAME": "vscode",
@@ -13,15 +13,24 @@
         }
     },
     "containerEnv": {
-        "PYTHONPATH": "/app"
+        "PYTHONPATH": "/app",
+        "UV_CACHE_DIR": "/app/.cache/uv",
+        "UV_SYSTEM_PYTHON": "/usr/local/bin/python",
+        "UV_LINK_MODE": "copy"
     },
     "customizations": {
         "vscode": {
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash",
+                "terminal.integrated.profiles.linux": {
+                    "bash": {
+                        "path": "bash",
+                        "icon": "terminal-bash"
+                    }
+                },
                 "git.autofetch": true,
                 "git.autofetchPeriod": 3600,
-                "python.defaultInterpreterPath": "/app/.venv/bin/python",
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
                 "python.analysis.extraPaths": [
                     "/app"
                 ],
@@ -50,5 +59,8 @@
     "workspaceFolder": "/app",
     "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
     "remoteUser": "vscode",
-    "postCreateCommand": "uv sync"
+    "mounts": [
+        "source=uv-cache,target=/app/.cache/uv,type=volume"
+    ],
+    "postCreateCommand": "uv sync --frozen"
 }
