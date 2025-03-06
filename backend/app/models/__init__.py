@@ -1,4 +1,8 @@
+from sqlmodel import SQLModel
 from .item import Item
 from .user import User
 
-__all__ = ["User", "Item"]
+# Pour Alembic
+Base = SQLModel
+
+__all__ = ["User", "Item", "Base"]

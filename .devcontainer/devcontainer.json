@@ -1,5 +1,8 @@
 {
     "name": "FastAPI Supabase Development",
+    "runArgs": [
+        "--network=host"
+    ],
     // "dockerComposeFile": "../compose-ci.yaml",
     // "service": "dev",
     "build": {
