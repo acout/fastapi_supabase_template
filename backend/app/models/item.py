@@ -2,7 +2,7 @@ import uuid
 
 from sqlmodel import Field, SQLModel
 
-from app.models.base import InDBBase
+from app.models.base import RLSModel
 
 
 # Shared properties
@@ -22,7 +22,7 @@ class ItemUpdate(ItemBase):
 
 
 # Database model, database table inferred from class name
-class Item(InDBBase, ItemBase, table=True):
+class Item(RLSModel, ItemBase, table=True):
     pass
 
 
