@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import subprocess
 
-def run_migration(environment: str, command: str):
+def run_migration(environment: str, command: str, message: str = ""):
     """
     Run alembic commands with specific environment
     :param environment: 'development', 'staging', or 'production'
@@ -23,6 +23,8 @@ def run_migration(environment: str, command: str):
         cmd = ["alembic", "upgrade", "head"]
     elif command == "current":
         cmd = ["alembic", "current"]
+    elif command == "revision":
+        cmd = ["alembic", "revision", "--autogenerate", "-m", message]
     else:
         cmd = ["alembic"] + command.split()
     
@@ -48,4 +50,5 @@ if __name__ == "__main__":
     
     environment = sys.argv[1]
     command = sys.argv[2]
-    run_migration(environment, command) 
+    message = sys.argv[3] if len(sys.argv) > 3 else ""
+    run_migration(environment, command, message) 
