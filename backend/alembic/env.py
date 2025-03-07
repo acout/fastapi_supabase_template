@@ -10,6 +10,9 @@ from alembic.operations import ops
 from app.models.base import RLSModel
 from app.models import Base, Item
 
+# Import models and buckets
+from app.models import Base, Profile, ProfilePicturesBucket, STORAGE_BUCKETS
+
 logger = logging.getLogger("alembic")
 
 from app.core.config import settings
@@ -62,13 +65,20 @@ def include_object(object, name, type_, reflected, compare_to):
 
 def process_revision_directives(context, revision, directives):
     """Ajoute les directives RLS directement dans les opérations"""
+    logger.debug("Processing revision directives...")
+    
+    if not directives or not directives[0].upgrade_ops:
+        logger.debug("No upgrade ops found!")
+        return
+        
     script = directives[0]
     
     if not script.upgrade_ops:
-        logger.debug("No upgrade operations found")
-        return
-
-    # Collecter les tables créées
+        script.upgrade_ops = ops.UpgradeOps([])
+    if not script.downgrade_ops:
+        script.downgrade_ops = ops.DowngradeOps([])
+    
+    # 1. Traitement des tables à créer
     created_tables = []
     for op in script.upgrade_ops.ops:
         if hasattr(op, 'table_name'):
@@ -81,8 +91,9 @@ def process_revision_directives(context, revision, directives):
     for table_name in created_tables:
         # Trouver le modèle correspondant
         model = None
-        for m in [Item]:
-            if (getattr(m, '__tablename__', None) == table_name and 
+        for m in [Item, Profile]:  # Ajoutez tous vos modèles ici
+            if (hasattr(m, '__tablename__') and 
+                getattr(m, '__tablename__', None) == table_name and 
                 issubclass(m, RLSModel) and 
                 getattr(m, '__rls_enabled__', False)):
                 model = m
@@ -112,9 +123,6 @@ def process_revision_directives(context, revision, directives):
                 logger.debug(f"Added {operation} policy for {table_name}")
             
             # Add downgrade operations at the beginning
-            if not script.downgrade_ops:
-                script.downgrade_ops = ops.DowngradeOps([])
-            
             # Drop policies first
             for operation in model.get_policies().keys():
                 script.downgrade_ops.ops.insert(0, 
@@ -127,6 +135,57 @@ def process_revision_directives(context, revision, directives):
             script.downgrade_ops.ops.insert(0,
                 ops.ExecuteSQLOp(f"ALTER TABLE {table_name} DISABLE ROW LEVEL SECURITY;")
             )
+    
+    # 2. Traitement des buckets Storage
+    for bucket_class in STORAGE_BUCKETS:  # Utilisez votre liste de buckets
+        logger.debug(f"Processing storage bucket: {bucket_class.name}")
+        
+        # Create bucket
+        script.upgrade_ops.ops.append(
+            ops.ExecuteSQLOp(f"""
+                INSERT INTO storage.buckets (id, name, public)
+                VALUES (
+                    '{bucket_class.name}',
+                    '{bucket_class.name}',
+                    {str(bucket_class.public).lower()}
+                )
+                ON CONFLICT (id) DO UPDATE
+                SET public = EXCLUDED.public;
+            """)
+        )
+        
+        # Enable RLS on storage.objects
+        script.upgrade_ops.ops.append(
+            ops.ExecuteSQLOp(
+                "ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;"
+            )
+        )
+        
+        # Add bucket policies
+        for policy in bucket_class.get_policies():
+            sql = f"""
+                CREATE POLICY "{policy.name}"
+                ON storage.objects
+                FOR {policy.operation.value}
+                {f"USING ({policy.using})" if policy.using else ""}
+                {f"WITH CHECK ({policy.check})" if policy.check else ""};
+            """
+            script.upgrade_ops.ops.append(ops.ExecuteSQLOp(sql))
+            logger.debug(f"Added {policy.operation.value} policy for bucket {bucket_class.name}")
+        
+        # Add downgrade operations
+        for policy in bucket_class.get_policies():
+            script.downgrade_ops.ops.insert(0,
+                ops.ExecuteSQLOp(
+                    f'DROP POLICY IF EXISTS "{policy.name}" ON storage.objects;'
+                )
+            )
+        
+        script.downgrade_ops.ops.append(
+            ops.ExecuteSQLOp(
+                f"DELETE FROM storage.buckets WHERE id = '{bucket_class.name}';"
+            )
+        )
 
 
 def run_migrations_offline() -> None:
