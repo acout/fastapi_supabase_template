@@ -1,5 +1,5 @@
 import uuid
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Column, UUID, text
 from typing import Optional, ClassVar, Dict, Tuple, List, Type
 from dataclasses import dataclass
 from enum import Enum # Pour lier avec nos modèles
@@ -13,7 +13,11 @@ class RLSModel(SQLModel):
     """Classe de base avec politiques RLS par défaut"""
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(
-        foreign_key="auth.users.id", nullable=False, ondelete="CASCADE"
+        UUID(as_uuid=True),
+        sa_column_kwargs={"server_default": text("auth.uid()")},
+        nullable=False,
+        foreign_key="auth.users.id",
+        ondelete="CASCADE"
     )
     
     # Flag pour activer/désactiver RLS
@@ -82,11 +86,13 @@ class RLSModel(SQLModel):
             
         return policies
 
+
 class StorageOperation(str, Enum):
     SELECT = "SELECT"
     INSERT = "INSERT"
     UPDATE = "UPDATE"
     DELETE = "DELETE"
+    ALL = "ALL"
 
 @dataclass
 class BucketPolicy:
@@ -95,124 +101,49 @@ class BucketPolicy:
     check: Optional[str] = None
     name: Optional[str] = None
 
+
 class StorageBucket:
     name: ClassVar[str]
     public: ClassVar[bool] = False
     allowed_mime_types: ClassVar[List[str]] = ["*/*"]
     max_file_size: ClassVar[int] = 50 * 1024 * 1024
     linked_model: ClassVar[Optional[Type[RLSModel]]] = None  # Modèle lié
-    
+
     @classmethod
     def get_path_pattern(cls) -> str:
         """Pattern de chemin par défaut"""
         if cls.linked_model:
             return f"{cls.linked_model.__tablename__}/{{record_id}}/{{filename}}"
         return "{user_id}/{filename}"
-    
+
     @classmethod
     def get_policies(cls) -> List[BucketPolicy]:
-        policies = []
+        """Retourne une politique RLS simple pour le storage"""
+        size_check = f"(metadata->>'size')::bigint <= {cls.max_file_size}"
+        mime_check = (
+            f"'{cls.allowed_mime_types[0]}' = '*/*' OR "
+            f"metadata->>'mimetype' IN ('" + "', '".join(cls.allowed_mime_types) + "')"
+        )
         
-        # Politique de lecture
-        select_policy = f"""(
-            auth.role() = 'authenticated' AND (
-                -- Propriétaire direct du fichier
-                auth.uid() = owner
-                -- OU bucket public
-                OR bucket_id = '{cls.name}' AND {str(cls.public).lower()}
-                {f'''
-                -- OU accès via la table liée
-                OR EXISTS (
-                    SELECT 1 FROM {cls.linked_model.__tablename__} t
-                    WHERE 
-                        -- Le chemin commence par l'ID de l'enregistrement
-                        substring(name from '{cls.name}/([^/]+)/.*') = t.id::text
-                        -- Et l'utilisateur a accès à cet enregistrement
-                        AND ({cls.linked_model.get_select_policy().using})
-                )
-                ''' if cls.linked_model else ''}
-            )
-        )"""
+        table_prefix = cls.name
         
-        policies.append(BucketPolicy(
-            operation=StorageOperation.SELECT,
-            name=f"{cls.name}_select",
-            using=select_policy
-        ))
-        
-        # Politique d'insertion
-        insert_policy = f"""(
+        base_policy = f"""(
             auth.role() = 'authenticated' AND
-            (metadata->>'size')::bigint <= {cls.max_file_size} AND
-            (
-                '{cls.allowed_mime_types[0]}' = '*/*' OR
-                metadata->>'mimetype' IN ('{("', '").join(cls.allowed_mime_types)}')
-            )
-            {f'''
-            -- Vérifier les droits sur l'enregistrement lié
-            AND EXISTS (
-                SELECT 1 FROM {cls.linked_model.__tablename__} t
-                WHERE 
-                    -- Le chemin doit commencer par un ID valide
-                    substring(name from '{cls.name}/([^/]+)/.*') = t.id::text
-                    -- Et l'utilisateur doit avoir le droit de modifier l'enregistrement
-                    AND ({cls.linked_model.get_update_policy().using})
-            )
-            ''' if cls.linked_model else ''}
+            (storage.foldername(name))[1] = (select auth.uid()::text)
         )"""
         
-        policies.append(BucketPolicy(
-            operation=StorageOperation.INSERT,
-            name=f"{cls.name}_insert",
-            check=insert_policy
-        ))
+        #  AND
+            # starts_with(name, '{table_prefix}/') AND
+            # (storage.foldername(name))[1] = (select auth.uid()::text)
+        # AND
+        #    {size_check} AND
+        #    {mime_check}
         
-        # Politique de mise à jour
-        update_policy = f"""(
-            auth.role() = 'authenticated' AND
-            auth.uid() = owner AND
-            (metadata->>'size')::bigint <= {cls.max_file_size} AND
-            (
-                '{cls.allowed_mime_types[0]}' = '*/*' OR
-                metadata->>'mimetype' IN ('{("', '").join(cls.allowed_mime_types)}')
+        return [
+            BucketPolicy(
+                name=f"Users can manage their own files in {table_prefix}",
+                operation=StorageOperation.ALL,
+                using=base_policy,
+                check=base_policy
             )
-            {f'''
-            -- Vérifier les droits sur l'enregistrement lié
-            AND EXISTS (
-                SELECT 1 FROM {cls.linked_model.__tablename__} t
-                WHERE 
-                    substring(name from '{cls.name}/([^/]+)/.*') = t.id::text
-                    AND ({cls.linked_model.get_update_policy().using})
-            )
-            ''' if cls.linked_model else ''}
-        )"""
-
-        policies.append(BucketPolicy(
-            operation=StorageOperation.UPDATE,
-            name=f"{cls.name}_update",
-            check=update_policy
-        ))
-
-        # Politique de suppression
-        delete_policy = f"""(
-            auth.role() = 'authenticated' AND (
-                auth.uid() = owner
-                {f'''
-                -- OU droits via la table liée
-                OR EXISTS (
-                    SELECT 1 FROM {cls.linked_model.__tablename__} t
-                    WHERE 
-                        substring(name from '{cls.name}/([^/]+)/.*') = t.id::text
-                        AND ({cls.linked_model.get_delete_policy().using})
-                )
-                ''' if cls.linked_model else ''}
-            )
-        )"""
-
-        policies.append(BucketPolicy(
-            operation=StorageOperation.DELETE,
-            name=f"{cls.name}_delete",
-            using=delete_policy  # Pour DELETE, on utilise USING et non WITH CHECK
-        ))
-        
-        return policies
+        ]
