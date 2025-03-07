@@ -1,9 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "fastapi_supabase_template"
-version = "0.4.1"
-description = ""
-authors = [{ name = "Atticus.J.Zeller", email = "hello@atticux.me" }]
-readme = "README.md"
+name = "fastapi-supabase-template"
+version = "0.1.0"
+description = "FastAPI Supabase Template"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.109.0",
+    "sqlmodel>=0.0.14",
+    "python-dotenv>=1.0.0",
+    "supabase>=2.3.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.1",
+    "httpx>=0.25.0",
+    "faker>=22.0.0",
+    "pytest-watch>=4.2.0",
+]
+
+[tool.setuptools]
+packages = ["backend"]  # Spécifier explicitement le package
+package-dir = {"" = "."}  # Le package est à la racine
+
+# Optionnel : exclure les fichiers de test du package
+[tool.setuptools.exclude-package-data]
+"*" = ["*.tests.*", "*.testing.*"]
 
 ## VCS
 [tool.git-cliff.remote.github]

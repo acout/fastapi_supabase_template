@@ -4,9 +4,9 @@ from typing import Generic, TypeVar
 
 from sqlmodel import Session, SQLModel, select
 
-from app.models.base import InDBBase
+from app.models.base import RLSModel
 
-ModelType = TypeVar("ModelType", bound=InDBBase)
+ModelType = TypeVar("ModelType", bound=RLSModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=SQLModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=SQLModel)
 

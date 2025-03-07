@@ -1,8 +1,8 @@
 """profile_bucket
 
-Revision ID: 6f586b393dba
+Revision ID: 18e5c6bd708c
 Revises: 
-Create Date: 2025-03-07 17:43:17.949854
+Create Date: 2025-03-07 18:07:19.173054
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '6f586b393dba'
+revision: str = '18e5c6bd708c'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
