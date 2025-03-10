@@ -9,7 +9,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, get_super_client
+from app.core.config import settings
 from app.main import app
 from app.models.file import FileMetadata
 from app.models.storage import ItemDocuments, ProfilePictures
@@ -31,17 +32,13 @@ def get_test_db() -> Generator[Session, None, None]:
     SQLModel.metadata.drop_all(engine)
 
 
-async def get_test_current_user() -> UserIn:
-    """Utilisateur de test pour les tests d'authentification"""
+async def get_test_superuser() -> UserIn:
+    """Utilisateur superuser pour les tests d'authentification"""
     return UserIn(
-        id="00000000-0000-0000-0000-000000000000",
-        email="test@example.com",
-        access_token="test_token",
+        id="11111111-1111-1111-1111-111111111111",  # ID fictif mais constant
+        email=settings.FIRST_SUPERUSER,
+        access_token="test_superuser_token",
     )
-
-
-# Remplacer les dépendances de l'application par des dépendances de test
-app.dependency_overrides[get_current_user] = get_test_current_user
 
 
 # Mock pour le service de stockage Supabase
@@ -55,7 +52,7 @@ class MockStorageService:
         if session:
             file_meta = FileMetadata(
                 id=uuid.uuid4(),
-                owner_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+                owner_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),  # ID du superuser
                 filename=kwargs.get("file").filename or "test.txt",
                 content_type=kwargs.get("file").content_type or "text/plain",
                 size=100,
@@ -98,9 +95,24 @@ async def get_test_storage_service():
     return MockStorageService()
 
 
+# Mock pour le client Supabase
+async def get_test_super_client():
+    mock_client = AsyncMock()
+    mock_client.auth.get_user.return_value = {
+        "user": {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "email": settings.FIRST_SUPERUSER
+        }
+    }
+    return mock_client
+
+
 @pytest.fixture
-def client():
-    app.dependency_overrides[get_current_user] = get_test_current_user
+def client(superuser_auth):
+    """Client de test avec authentification superuser"""
+    # Remplacer les dépendances
+    app.dependency_overrides[get_current_user] = get_test_superuser
+    app.dependency_overrides[get_super_client] = get_test_super_client
     app.dependency_overrides["get_db"] = get_test_db
     
     # Remplacer le service de stockage par notre mock
@@ -108,15 +120,27 @@ def client():
     app.dependency_overrides[get_storage_service_dep] = get_test_storage_service
     
     with TestClient(app) as c:
+        # Ajouter l'en-tête d'authentification du superuser
+        c.headers.update(superuser_auth)
         yield c
+
+    # Nettoyer les remplacements après les tests
+    app.dependency_overrides = {}
 
 
 @pytest.fixture
 def test_db():
+    """Base de données SQLite en mémoire pour les tests"""
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         yield session
     SQLModel.metadata.drop_all(engine)
+
+
+@pytest.fixture
+def superuser_id():
+    """ID du superuser pour les tests"""
+    return uuid.UUID("11111111-1111-1111-1111-111111111111")
 
 
 def test_upload_profile_picture(client):
@@ -142,14 +166,14 @@ def test_upload_profile_picture(client):
     assert data["description"] == "Test profile picture"
 
 
-def test_upload_item_document(client, test_db):
+def test_upload_item_document(client, test_db, superuser_id):
     """Test pour l'upload d'un document lié à un item"""
     # Créer un item de test dans la base de données
     from app.models.item import Item
     item = Item(
         id=uuid.uuid4(),
         title="Test item",
-        owner_id=uuid.UUID("00000000-0000-0000-0000-000000000000")
+        owner_id=superuser_id
     )
     test_db.add(item)
     test_db.commit()
@@ -177,20 +201,18 @@ def test_upload_item_document(client, test_db):
     assert data["item_id"] == str(item.id)
 
 
-def test_list_user_files(client, test_db):
+def test_list_user_files(client, test_db, superuser_id):
     """Test pour la liste des fichiers d'un utilisateur"""
     # Créer des fichiers de test dans la base de données
-    user_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
-    
     files = [
         FileMetadata(
             id=uuid.uuid4(),
-            owner_id=user_id,
+            owner_id=superuser_id,
             filename=f"test{i}.txt",
             content_type="text/plain",
             size=100,
             bucket_name="test-bucket",
-            path=f"test/{user_id}/test{i}.txt"
+            path=f"test/{superuser_id}/test{i}.txt"
         )
         for i in range(3)
     ]
@@ -209,23 +231,22 @@ def test_list_user_files(client, test_db):
     assert len(data) == 3
     for i, file_data in enumerate(data):
         assert file_data["filename"] == f"test{i}.txt"
-        assert file_data["owner_id"] == str(user_id)
+        assert file_data["owner_id"] == str(superuser_id)
 
 
-def test_get_file_metadata(client, test_db):
+def test_get_file_metadata(client, test_db, superuser_id):
     """Test pour la récupération des métadonnées d'un fichier"""
     # Créer un fichier de test dans la base de données
     file_id = uuid.uuid4()
-    user_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     
     file = FileMetadata(
         id=file_id,
-        owner_id=user_id,
+        owner_id=superuser_id,
         filename="test.txt",
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path=f"test/{user_id}/test.txt"
+        path=f"test/{superuser_id}/test.txt"
     )
     
     test_db.add(file)
@@ -239,23 +260,22 @@ def test_get_file_metadata(client, test_db):
     data = response.json()
     assert data["id"] == str(file_id)
     assert data["filename"] == "test.txt"
-    assert data["owner_id"] == str(user_id)
+    assert data["owner_id"] == str(superuser_id)
 
 
-def test_get_file_url(client, test_db):
+def test_get_file_url(client, test_db, superuser_id):
     """Test pour la génération d'une URL de téléchargement"""
     # Créer un fichier de test dans la base de données
     file_id = uuid.uuid4()
-    user_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     
     file = FileMetadata(
         id=file_id,
-        owner_id=user_id,
+        owner_id=superuser_id,
         filename="test.txt",
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path=f"test/{user_id}/test.txt"
+        path=f"test/{superuser_id}/test.txt"
     )
     
     test_db.add(file)
@@ -272,20 +292,19 @@ def test_get_file_url(client, test_db):
     assert data["expires_in"] == 60  # Valeur par défaut
 
 
-def test_update_file_metadata(client, test_db):
+def test_update_file_metadata(client, test_db, superuser_id):
     """Test pour la mise à jour des métadonnées d'un fichier"""
     # Créer un fichier de test dans la base de données
     file_id = uuid.uuid4()
-    user_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     
     file = FileMetadata(
         id=file_id,
-        owner_id=user_id,
+        owner_id=superuser_id,
         filename="test.txt",
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path=f"test/{user_id}/test.txt",
+        path=f"test/{superuser_id}/test.txt",
         description="Original description"
     )
     
@@ -312,20 +331,19 @@ def test_update_file_metadata(client, test_db):
     assert data["description"] == "Updated description"  # Valeur mise à jour
 
 
-def test_delete_file(client, test_db):
+def test_delete_file(client, test_db, superuser_id):
     """Test pour la suppression d'un fichier"""
     # Créer un fichier de test dans la base de données
     file_id = uuid.uuid4()
-    user_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     
     file = FileMetadata(
         id=file_id,
-        owner_id=user_id,
+        owner_id=superuser_id,
         filename="test.txt",
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path=f"test/{user_id}/test.txt"
+        path=f"test/{superuser_id}/test.txt"
     )
     
     test_db.add(file)
