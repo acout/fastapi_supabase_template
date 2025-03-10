@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
 from sqlmodel import Session, select
 
 from app.api.deps import CurrentUser, SessionDep, StorageServiceDep
@@ -17,9 +17,9 @@ router = APIRouter(prefix="/storage", tags=["storage"])
 async def upload_profile_picture(
     file: UploadFile = File(...),
     description: Optional[str] = Form(None),
-    user: CurrentUser = Depends(),
-    session: SessionDep = Depends(),
-    storage_service: StorageServiceDep = Depends(),
+    user: CurrentUser = None,
+    session: SessionDep = None,
+    storage_service: StorageServiceDep = None,
 ) -> FileMetadata:
     """Upload une image de profil
     
@@ -63,9 +63,9 @@ async def upload_item_document(
     item_id: uuid.UUID,
     file: UploadFile = File(...),
     description: Optional[str] = Form(None),
-    user: CurrentUser = Depends(),
-    session: SessionDep = Depends(),
-    storage_service: StorageServiceDep = Depends(),
+    user: CurrentUser = None,
+    session: SessionDep = None,
+    storage_service: StorageServiceDep = None,
 ) -> FileMetadata:
     """Upload un document lié à un item
     
@@ -117,8 +117,8 @@ async def list_user_files(
     item_id: Optional[uuid.UUID] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    user: CurrentUser = Depends(),
-    session: SessionDep = Depends(),
+    user: CurrentUser = None,
+    session: SessionDep = None,
 ) -> List[FileMetadata]:
     """Liste les fichiers de l'utilisateur
     
@@ -150,8 +150,8 @@ async def list_user_files(
 @router.get("/file/{file_id}", response_model=FileMetadataPublic)
 async def get_file_metadata(
     file_id: uuid.UUID,
-    user: CurrentUser = Depends(),
-    session: SessionDep = Depends(),
+    user: CurrentUser = None,
+    session: SessionDep = None,
 ) -> FileMetadata:
     """Récupère les métadonnées d'un fichier
     
@@ -178,9 +178,9 @@ async def get_file_metadata(
 async def get_file_download_url(
     file_id: uuid.UUID,
     expiration: int = Query(60, gt=0, le=86400, description="Durée de validité de l'URL en secondes (max 24h)"),
-    user: CurrentUser = Depends(),
-    session: SessionDep = Depends(),
-    storage_service: StorageServiceDep = Depends(),
+    user: CurrentUser = None,
+    session: SessionDep = None,
+    storage_service: StorageServiceDep = None,
 ) -> dict:
     """Génère une URL signée pour télécharger un fichier
     
@@ -216,8 +216,8 @@ async def get_file_download_url(
 async def update_file_metadata(
     file_id: uuid.UUID,
     update_data: FileMetadataUpdate,
-    user: CurrentUser = Depends(),
-    session: SessionDep = Depends(),
+    user: CurrentUser = None,
+    session: SessionDep = None,
 ) -> FileMetadata:
     """Mise à jour des métadonnées d'un fichier
     
@@ -254,9 +254,9 @@ async def update_file_metadata(
 @router.delete("/file/{file_id}")
 async def delete_file(
     file_id: uuid.UUID,
-    user: CurrentUser = Depends(),
-    session: SessionDep = Depends(),
-    storage_service: StorageServiceDep = Depends(),
+    user: CurrentUser = None,
+    session: SessionDep = None,
+    storage_service: StorageServiceDep = None,
 ) -> dict:
     """Supprime un fichier
     
