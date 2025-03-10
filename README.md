@@ -105,15 +105,57 @@ curl -X GET "http://localhost:8000/api/v1/storage/file/FILE_ID/url" \
 
 ## Tests
 
+### Tests avec SQLite (mock)
+
 ```bash
 cd backend
+# Exécuter les tests unitaires avec des mocks
+python -m pytest tests/
+```
+
+### Tests avec Supabase local
+
+```bash
+cd backend
+# Lancer Supabase local
+supabase start
 # Test de connexion à la base de données et migration
 scripts/pre-start.sh
 # Tests unitaires
 scripts/test.sh
-# Test de connexion à la base de données et code de test
-scripts/tests-start.sh
 ```
+
+### Tests avec Supabase Cloud
+
+Pour tester avec votre instance Supabase cloud, assurez-vous d'avoir configuré votre fichier `.env` avec les informations de connexion à votre Supabase cloud, puis exécutez :
+
+```bash
+cd backend
+# Exécuter les tests avec l'instance Supabase cloud
+bash scripts/cloud-test.sh
+```
+
+## Lancement de l'application
+
+### Avec Supabase local
+
+```bash
+# À la racine du projet
+supabase start
+
+# Dans le répertoire backend
+cd backend
+python -m app.main
+```
+
+### Avec Supabase Cloud
+
+```bash
+cd backend
+python -m app.main
+```
+
+L'application est ensuite accessible à l'adresse http://localhost:8000 et la documentation Swagger à http://localhost:8000/docs
 
 ## Docker
 
