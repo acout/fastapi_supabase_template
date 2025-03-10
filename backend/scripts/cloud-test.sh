@@ -3,14 +3,19 @@ set -e
 
 # Ce script lance les tests en utilisant l'instance Supabase cloud
 
+# Chemin du fichier .env (à la racine du projet)
+ENV_FILE="../.env"
+ENV_TEST_FILE="../.env.test"
+ENV_TEST_BACKUP="../.env.test.backup"
+
 # S'assurer que les variables d'environnement sont chargées
-if [ -f "../.env" ]; then
-    echo "Chargement des variables d'environnement depuis ../.env"
+if [ -f "$ENV_FILE" ]; then
+    echo "Chargement des variables d'environnement depuis $ENV_FILE"
     set -o allexport
-    source ../.env
+    source "$ENV_FILE"
     set +o allexport
 else
-    echo "Fichier .env non trouvé. Assurez-vous qu'il existe à la racine du projet."
+    echo "Fichier .env non trouvé à $ENV_FILE. Assurez-vous qu'il existe à la racine du projet."
     exit 1
 fi
 
@@ -57,9 +62,16 @@ echo "POSTGRES_DB: ${POSTGRES_DB}"
 echo "FIRST_SUPERUSER: ${FIRST_SUPERUSER}"
 echo ""
 
-# Créer ou mettre à jour le fichier .env.test
-echo "Création du fichier .env.test pour les tests..."
-cat > ../.env.test << EOL
+# Sauvegarder le fichier .env.test existant s'il existe
+if [ -f "$ENV_TEST_FILE" ]; then
+    echo "Sauvegarde du fichier .env.test existant..."
+    cp "$ENV_TEST_FILE" "$ENV_TEST_BACKUP"
+    echo "Fichier sauvegardé dans $ENV_TEST_BACKUP"
+fi
+
+# Créer un fichier .env.test temporaire pour les tests
+echo "Création d'un fichier .env.test temporaire pour les tests..."
+cat > "$ENV_TEST_FILE" << EOL
 # Configuration pour les tests uniquement
 # Utilise la configuration de production pour les tests cloud
 
@@ -91,10 +103,19 @@ FIRST_SUPERUSER=${FIRST_SUPERUSER}
 FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD}
 EOL
 
-echo "Fichier .env.test créé avec les paramètres cloud."
+echo "Fichier .env.test temporaire créé."
 
 # Exécuter les tests
 echo "Exécution des tests avec les paramètres cloud..."
 python -m pytest tests/ -v
+TEST_EXIT_CODE=$?
+
+# Restaurer le fichier .env.test original si la sauvegarde existe
+if [ -f "$ENV_TEST_BACKUP" ]; then
+    echo "Restauration du fichier .env.test original..."
+    mv "$ENV_TEST_BACKUP" "$ENV_TEST_FILE"
+    echo "Fichier .env.test restauré."
+fi
 
 echo "Tests terminés."
+exit $TEST_EXIT_CODE
