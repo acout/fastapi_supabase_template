@@ -11,22 +11,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     procps \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Supabase CLI
-RUN curl -fsSL https://get.supabase.io/apt | bash \
-    && apt-get update \
-    && apt-get install -y supabase \
-    && rm -rf /var/lib/apt/lists/*
+# Install Supabase CLI directly from GitHub releases
+RUN wget -O supabase.deb https://github.com/supabase/cli/releases/download/v1.145.4/supabase_1.145.4_linux_amd64.deb \
+    && dpkg -i supabase.deb \
+    && rm supabase.deb
 
 # Install UV for package management
 RUN curl -fsSL https://astral.sh/uv/install.sh | bash \
     && mv ~/.cargo/bin/uv /usr/local/bin/ \
     && chmod +x /usr/local/bin/uv
 
-# Make sure entrypoint script is executable
-RUN echo "#!/bin/bash\n\n# Execute passed CMD\nexec \"\$@\"" > /usr/local/bin/entrypoint.sh \
-    && chmod +x /usr/local/bin/entrypoint.sh
-
-# Switch to vscode user is done automatically by the base image
-
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# Make sure the container stays running
 CMD ["sleep", "infinity"]

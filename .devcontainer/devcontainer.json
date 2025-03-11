@@ -14,23 +14,16 @@
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.organizeImports": true
-        },
-        "python.linting.flake8Args": [
-          "--max-line-length=100"
-        ]
+        }
       },
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-python.flake8",
-        "ms-python.black-formatter",
-        "visualstudioexptteam.vscodeintellicode"
+        "ms-python.black-formatter"
       ]
     }
   },
   "postCreateCommand": "pip install -e ./backend && pip install pre-commit && pre-commit install",
   "remoteUser": "vscode",
-  "runArgs": ["--init"],
-  "mounts": [],
-  "features": {}
+  "runArgs": ["--init"]
 }
