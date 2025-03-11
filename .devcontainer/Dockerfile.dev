@@ -21,6 +21,7 @@ RUN apt-get update \
         curl \
         ca-certificates \
         wget \
+        procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -55,3 +56,6 @@ RUN chown -R $USERNAME:$USERNAME /app
 
 # Switch to non-root user
 USER $USERNAME
+
+# Keep container running
+CMD ["sleep", "infinity"]
