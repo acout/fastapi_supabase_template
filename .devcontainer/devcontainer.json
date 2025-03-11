@@ -1,75 +1,19 @@
 {
     "name": "FastAPI Supabase Development",
-    "runArgs": [
-        "--network=host"
-    ],
-    "build": {
-        "dockerfile": "Dockerfile.dev",
-        "context": ".."
-    },
-    "containerEnv": {
-        "PYTHONPATH": "/app",
-        "UV_CACHE_DIR": "/app/.cache/uv",
-        "UV_SYSTEM_PYTHON": "/usr/local/bin/python",
-        "UV_LINK_MODE": "copy"
-    },
+    "image": "python:3.12",
     "customizations": {
         "vscode": {
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash",
-                "terminal.integrated.profiles.linux": {
-                    "bash": {
-                        "path": "bash",
-                        "icon": "terminal-bash"
-                    }
-                },
-                "git.autofetch": true,
-                "git.autofetchPeriod": 3600,
-                "python.defaultInterpreterPath": "/usr/local/bin/python",
-                "python.analysis.extraPaths": [
-                    "/app"
-                ],
-                "python.linting.enabled": true,
-                "editor.formatOnSave": true,
-                "editor.codeActionsOnSave": {
-                    "source.fixAll": "explicit",
-                    "source.organizeImports": "explicit"
-                },
-                "[python]": {
-                    "editor.defaultFormatter": "astral-sh.ruff-vscode",
-                    "editor.formatOnSave": true,
-                    "editor.formatOnPaste": false
-                },
-                "python.testing.pytestEnabled": true,
-                "python.testing.unittestEnabled": false,
-                "python.testing.nosetestsEnabled": false,
-                "ruff.enable": true,
-                "ruff.format.args": ["--select", "I"],
-                "python.analysis.autoImportCompletions": true,
-                "autoDocstring.docstringFormat": "google"
+                "python.defaultInterpreterPath": "/usr/local/bin/python"
             },
             "extensions": [
                 "ms-python.python",
-                "ms-python.vscode-pylance",
-                "astral-sh.ruff-vscode",
-                "matangover.mypy",
-                "charliermarsh.pytest",
-                "njpwerner.autodocstring",
-                "github.vscode-github-actions"
+                "ms-python.vscode-pylance"
             ]
         }
     },
-    "features": {
-        "ghcr.io/devcontainers/features/git:1": {
-            "version": "latest",
-            "ppa": true
-        }
-    },
-    "workspaceFolder": "/app",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
-    "remoteUser": "vscode",
-    "mounts": [
-        "source=uv-cache,target=/app/.cache/uv,type=volume"
-    ],
-    "postCreateCommand": "pip install --user pre-commit && cd backend && uv sync --all-groups --dev && pre-commit install"
+    "workspaceFolder": "/workspace",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+    "onCreateCommand": "pip install pre-commit && cd /workspace/backend && pip install -e . && pre-commit install"
 }
