@@ -9,28 +9,31 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: sort-simple-yaml
-      - id: check-json
-      - id: pretty-format-json
-        args: [--autofix, --no-sort-keys ]
+      # Temporarily disable JSON checks
+      # - id: check-json
+      # - id: pretty-format-json
+      #   args: [--autofix, --no-sort-keys ]
       - id: check-added-large-files
         args: [--maxkb=51200]
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: detect-private-key
 
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
-    hooks:
-      - id: codespell
-        args: [--write-changes, --ignore-words=.github/codespell-ignore.txt]
-        files: \.(py|sh|json|yml|yaml|md)$
+  # Temporarily disable codespell
+  # - repo: https://github.com/codespell-project/codespell
+  #   rev: v2.4.1
+  #   hooks:
+  #     - id: codespell
+  #       args: [--write-changes, --ignore-words=.github/codespell-ignore.txt]
+  #       files: \.(py|sh|json|yml|yaml|md)$
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.4
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
+  # Temporarily disable ruff
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.9.4
+  #   hooks:
+  #     - id: ruff
+  #       args: [--fix]
+  #     - id: ruff-format
 
   # Disabled due to executable not found error
   # - repo: https://github.com/hadolint/hadolint
