@@ -1,19 +1,38 @@
 {
     "name": "FastAPI Supabase Development",
-    "image": "python:3.12",
+    "build": {
+        "dockerfile": "Dockerfile.dev",
+        "context": ".."
+    },
     "customizations": {
         "vscode": {
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash",
-                "python.defaultInterpreterPath": "/usr/local/bin/python"
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.linting.enabled": true,
+                "python.linting.flake8Enabled": true,
+                "python.formatting.provider": "black",
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": true
+                },
+                "python.linting.flake8Args": [
+                    "--max-line-length=100"
+                ]
             },
             "extensions": [
                 "ms-python.python",
-                "ms-python.vscode-pylance"
+                "ms-python.vscode-pylance",
+                "ms-python.flake8",
+                "ms-python.black-formatter",
+                "visualstudioexptteam.vscodeintellicode"
             ]
         }
     },
-    "workspaceFolder": "/workspace",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
-    "onCreateCommand": "pip install pre-commit && cd /workspace/backend && pip install -e . && pre-commit install"
+    "remoteUser": "vscode",
+    "updateRemoteUserUID": true,
+    "postCreateCommand": "pip install -e ./backend && pip install pre-commit && pre-commit install",
+    "waitFor": "onCreateCommand",
+    "forwardPorts": [8000],
+    "runArgs": ["--init"]
 }
