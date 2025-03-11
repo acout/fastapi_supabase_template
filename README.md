@@ -40,19 +40,45 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 - [pre-commit](https://pre-commit.com/) pour les hooks de pré-commit
 - [Supabase CLI](https://supabase.com/docs/guides/cli) pour le développement local
 
-### Installation
+### Installation rapide
+
+Utilisez nos scripts d'installation automatique pour configurer rapidement l'environnement de développement :
+
+**Linux/MacOS** :
+```bash
+# Cloner le repository
+git clone https://github.com/acout/fastapi_supabase_template.git
+cd fastapi_supabase_template
+
+# Exécuter le script d'installation
+chmod +x scripts/setup-dev-environment.sh
+./scripts/setup-dev-environment.sh
+```
+
+**Windows** :
+```powershell
+# Cloner le repository
+git clone https://github.com/acout/fastapi_supabase_template.git
+cd fastapi_supabase_template
+
+# Exécuter le script d'installation (PowerShell)
+.\scripts\setup-dev-environment.ps1
+```
+
+### Installation manuelle
 
 ```bash
 # Cloner le repository
 git clone https://github.com/acout/fastapi_supabase_template.git
 cd fastapi_supabase_template
 
+# Installer pre-commit
+pip install pre-commit
+pre-commit install
+
 # Installer les dépendances avec uv
 cd backend
 uv sync --all-groups --dev
-
-# Installer les hooks pre-commit
-pre-commit install
 ```
 
 ### Python
