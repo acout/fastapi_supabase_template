@@ -1,8 +1,8 @@
 {
   "name": "FastAPI Supabase Development",
-  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": {}
+  "build": {
+    "dockerfile": "Dockerfile.dev",
+    "context": ".."
   },
   "customizations": {
     "vscode": {
@@ -29,5 +29,8 @@
     }
   },
   "postCreateCommand": "pip install -e ./backend && pip install pre-commit && pre-commit install",
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  "runArgs": ["--init"],
+  "mounts": [],
+  "features": {}
 }
