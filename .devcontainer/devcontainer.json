@@ -25,5 +25,7 @@
   },
   "postCreateCommand": "pip install -e ./backend && pip install pre-commit && pre-commit install",
   "remoteUser": "vscode",
-  "runArgs": ["--init"]
+  "runArgs": [
+    "--init"
+  ]
 }

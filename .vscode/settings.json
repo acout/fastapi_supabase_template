@@ -15,7 +15,10 @@
   "python.testing.nosetestsEnabled": false,
   "python.linting.enabled": true,
   "ruff.enable": true,
-  "ruff.format.args": ["--select", "I"],
+  "ruff.format.args": [
+    "--select",
+    "I"
+  ],
   "python.analysis.autoImportCompletions": true,
   "autoDocstring.docstringFormat": "google",
   "workbench.colorCustomizations": {
