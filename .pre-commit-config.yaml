@@ -9,10 +9,10 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: sort-simple-yaml
-      # Temporarily disable JSON checks
-      # - id: check-json
-      # - id: pretty-format-json
-      #   args: [--autofix, --no-sort-keys ]
+      # Réactivation des hooks JSON
+      - id: check-json
+      - id: pretty-format-json
+        args: [--autofix, --no-sort-keys ]
       - id: check-added-large-files
         args: [--maxkb=51200]
       - id: end-of-file-fixer
