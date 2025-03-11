@@ -128,11 +128,11 @@ supabase start
    ```bash
    # Vérifier la qualité du code
    pre-commit run --all-files
-   
+
    # Exécuter les tests
    cd backend
    pytest
-   
+
    # Vérifier la couverture de tests sur vos changements
    ../scripts/check_test_coverage.sh
    ```
@@ -158,7 +158,7 @@ En résumé:
 
 ### Outils configurés
 
-- **Ruff**: Linting et formattage 
+- **Ruff**: Linting et formattage
 - **mypy**: Vérification de types
 - **pytest**: Tests unitaires et d'intégration
 - **pre-commit**: Hooks de pré-commit pour automatiser les vérifications

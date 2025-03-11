@@ -8,4 +8,4 @@ source .env.$ENV
 # Appliquer les migrations via Supabase
 supabase db push
 
-echo "Migrations déployées sur l'environnement $ENV" 
+echo "Migrations déployées sur l'environnement $ENV"

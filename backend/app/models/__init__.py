@@ -9,7 +9,7 @@ from .storage import ProfilePictures, ItemDocuments
 Base = SQLModel
 
 __all__ = [
-    "User", "Item", "Base", "Profile", 
+    "User", "Item", "Base", "Profile",
     "ProfilePicturesBucket", "FileMetadata",
     "ProfilePictures", "ItemDocuments"
 ]

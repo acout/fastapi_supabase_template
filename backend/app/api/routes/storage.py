@@ -22,14 +22,14 @@ async def upload_profile_picture(
     storage_service: StorageServiceDep = None,
 ) -> FileMetadata:
     """Upload une image de profil
-    
+
     Args:
         file: Le fichier à uploader
         description: Description optionnelle du fichier
         user: L'utilisateur connecté
         session: La session de base de données
         storage_service: Le service de stockage
-        
+
     Returns:
         Les métadonnées du fichier uploadé
     """
@@ -39,7 +39,7 @@ async def upload_profile_picture(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Le fichier doit être une image"
         )
-    
+
     # Upload du fichier
     _, file_meta = await storage_service.upload_file(
         bucket_class=ProfilePictures,
@@ -48,13 +48,13 @@ async def upload_profile_picture(
         description=description,
         session=session
     )
-    
+
     if not file_meta:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erreur lors de l'enregistrement des métadonnées du fichier"
         )
-    
+
     return file_meta
 
 
@@ -68,7 +68,7 @@ async def upload_item_document(
     storage_service: StorageServiceDep = None,
 ) -> FileMetadata:
     """Upload un document lié à un item
-    
+
     Args:
         item_id: L'ID de l'item auquel associer le document
         file: Le fichier à uploader
@@ -76,7 +76,7 @@ async def upload_item_document(
         user: L'utilisateur connecté
         session: La session de base de données
         storage_service: Le service de stockage
-        
+
     Returns:
         Les métadonnées du fichier uploadé
     """
@@ -85,13 +85,13 @@ async def upload_item_document(
     statement = select(Item).where(Item.id == item_id, Item.owner_id == uuid.UUID(user.id))
     result = session.exec(statement)
     item = result.first()
-    
+
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Item avec l'id {item_id} non trouvé ou n'appartient pas à l'utilisateur"
         )
-    
+
     # Upload du fichier
     _, file_meta = await storage_service.upload_file(
         bucket_class=ItemDocuments,
@@ -101,13 +101,13 @@ async def upload_item_document(
         description=description,
         session=session
     )
-    
+
     if not file_meta:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erreur lors de l'enregistrement des métadonnées du fichier"
         )
-    
+
     return file_meta
 
 
@@ -121,7 +121,7 @@ async def list_user_files(
     session: SessionDep = None,
 ) -> List[FileMetadata]:
     """Liste les fichiers de l'utilisateur
-    
+
     Args:
         bucket_name: Filtre par nom de bucket (optionnel)
         item_id: Filtre par item_id (optionnel)
@@ -129,12 +129,12 @@ async def list_user_files(
         limit: Nombre maximum d'items à retourner
         user: L'utilisateur connecté
         session: La session de base de données
-        
+
     Returns:
         Liste des métadonnées des fichiers
     """
     user_id = uuid.UUID(user.id)
-    
+
     # Filtrage selon les paramètres
     if item_id:
         return file_metadata.get_by_item_id(session, item_id=item_id, skip=skip, limit=limit)
@@ -154,23 +154,23 @@ async def get_file_metadata(
     session: SessionDep = None,
 ) -> FileMetadata:
     """Récupère les métadonnées d'un fichier
-    
+
     Args:
         file_id: L'ID du fichier
         user: L'utilisateur connecté
         session: La session de base de données
-        
+
     Returns:
         Les métadonnées du fichier
     """
     file_meta = file_metadata.get(session, id=file_id)
-    
+
     if not file_meta or file_meta.owner_id != uuid.UUID(user.id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur"
         )
-    
+
     return file_meta
 
 
@@ -183,32 +183,32 @@ async def get_file_download_url(
     storage_service: StorageServiceDep = None,
 ) -> dict:
     """Génère une URL signée pour télécharger un fichier
-    
+
     Args:
         file_id: L'ID du fichier
         expiration: Durée de validité de l'URL en secondes
         user: L'utilisateur connecté
         session: La session de base de données
         storage_service: Le service de stockage
-        
+
     Returns:
         Un dictionnaire contenant l'URL signée
     """
     file_meta = file_metadata.get(session, id=file_id)
-    
+
     if not file_meta or file_meta.owner_id != uuid.UUID(user.id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur"
         )
-    
+
     # Générer l'URL signée
     signed_url = await storage_service.get_file_url(
         bucket_name=file_meta.bucket_name,
         file_path=file_meta.path,
         expiration=expiration
     )
-    
+
     return {"url": signed_url, "expires_in": expiration}
 
 
@@ -220,34 +220,34 @@ async def update_file_metadata(
     session: SessionDep = None,
 ) -> FileMetadata:
     """Mise à jour des métadonnées d'un fichier
-    
+
     Args:
         file_id: L'ID du fichier
         update_data: Les données à mettre à jour
         user: L'utilisateur connecté
         session: La session de base de données
-        
+
     Returns:
         Les métadonnées mises à jour
     """
     # Vérifier que le fichier existe et appartient à l'utilisateur
     file_meta = file_metadata.get(session, id=file_id)
-    
+
     if not file_meta or file_meta.owner_id != uuid.UUID(user.id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur"
         )
-    
+
     # Mise à jour des métadonnées
     updated_meta = file_metadata.update(session, id=file_id, obj_in=update_data)
-    
+
     if not updated_meta:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erreur lors de la mise à jour des métadonnées"
         )
-    
+
     return updated_meta
 
 
@@ -259,25 +259,25 @@ async def delete_file(
     storage_service: StorageServiceDep = None,
 ) -> dict:
     """Supprime un fichier
-    
+
     Args:
         file_id: L'ID du fichier
         user: L'utilisateur connecté
         session: La session de base de données
         storage_service: Le service de stockage
-        
+
     Returns:
         Un message de confirmation
     """
     # Vérifier que le fichier existe et appartient à l'utilisateur
     file_meta = file_metadata.get(session, id=file_id)
-    
+
     if not file_meta or file_meta.owner_id != uuid.UUID(user.id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur"
         )
-    
+
     # Supprimer le fichier et ses métadonnées
     await storage_service.delete_file(
         bucket_name=file_meta.bucket_name,
@@ -285,5 +285,5 @@ async def delete_file(
         session=session,
         metadata_id=file_id
     )
-    
+
     return {"status": "success", "message": "Fichier supprimé avec succès"}

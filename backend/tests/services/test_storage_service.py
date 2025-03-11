@@ -31,7 +31,7 @@ def db():
 def mock_supabase_client():
     """Mock pour le client Supabase"""
     client = AsyncMock()
-    
+
     # Configurer le mock pour storage.from_().upload()
     storage_from = AsyncMock()
     storage_from.upload.return_value = {"Key": "test/path/test.txt"}
@@ -42,16 +42,16 @@ def mock_supabase_client():
         {"name": "test1.txt", "id": "123", "metadata": {}},
         {"name": "test2.txt", "id": "456", "metadata": {}}
     ]
-    
+
     # Configurer client.storage.from_()
     client.storage.from_.return_value = storage_from
-    
+
     # Configurer client.storage.list_buckets()
     client.storage.list_buckets.return_value = [{"name": "existing-bucket"}]
-    
+
     # Configurer client.storage.create_bucket()
     client.storage.create_bucket.return_value = {"name": "new-bucket"}
-    
+
     return client
 
 
@@ -79,17 +79,17 @@ async def test_initialize_buckets(storage_service, mock_supabase_client):
     class TestBucket1:
         name = "existing-bucket"
         public = True
-    
+
     class TestBucket2:
         name = "new-bucket"
         public = False
-    
+
     # Exécuter l'initialisation
     await storage_service.initialize_buckets([TestBucket1, TestBucket2])
-    
+
     # Vérifier que list_buckets a été appelé
     mock_supabase_client.storage.list_buckets.assert_called_once()
-    
+
     # Vérifier que create_bucket a été appelé une seule fois pour le nouveau bucket
     assert mock_supabase_client.storage.create_bucket.call_count == 1
     mock_supabase_client.storage.create_bucket.assert_called_with(
@@ -104,7 +104,7 @@ async def test_upload_file(storage_service, mock_supabase_client, mock_upload_fi
     user_id = uuid.uuid4()
     record_id = uuid.uuid4()
     description = "Test description"
-    
+
     # Exécuter l'upload
     path, file_meta = await storage_service.upload_file(
         bucket_class=ProfilePictures,
@@ -114,14 +114,14 @@ async def test_upload_file(storage_service, mock_supabase_client, mock_upload_fi
         description=description,
         session=db
     )
-    
+
     # Vérifier que from_ et upload ont été appelés
     mock_supabase_client.storage.from_.assert_called_with(ProfilePictures.name)
     mock_supabase_client.storage.from_.return_value.upload.assert_called_once()
-    
+
     # Vérifier que le fichier a été lu
     mock_upload_file.read.assert_called_once()
-    
+
     # Vérifier les métadonnées
     assert isinstance(file_meta, FileMetadata)
     assert file_meta.owner_id == user_id
@@ -139,7 +139,7 @@ async def test_upload_file_invalid_type(storage_service, mock_supabase_client):
     file = MagicMock(spec=UploadFile)
     file.filename = "test.exe"
     file.content_type = "application/x-msdownload"  # Type non autorisé
-    
+
     # Essayer d'uploader avec une classe qui n'autorise que les images
     with pytest.raises(HTTPException) as exc_info:
         await storage_service.upload_file(
@@ -147,7 +147,7 @@ async def test_upload_file_invalid_type(storage_service, mock_supabase_client):
             file=file,
             user_id=uuid.uuid4()
         )
-    
+
     # Vérifier l'exception
     assert exc_info.value.status_code == 400
     assert "Unsupported file type" in exc_info.value.detail
@@ -162,7 +162,7 @@ async def test_upload_file_too_large(storage_service, mock_supabase_client):
     file.content_type = "image/jpeg"
     # Taille supérieure à la limite de ProfilePictures (5MB)
     file.read = AsyncMock(return_value=b"a" * (6 * 1024 * 1024))
-    
+
     # Essayer d'uploader
     with pytest.raises(HTTPException) as exc_info:
         await storage_service.upload_file(
@@ -170,7 +170,7 @@ async def test_upload_file_too_large(storage_service, mock_supabase_client):
             file=file,
             user_id=uuid.uuid4()
         )
-    
+
     # Vérifier l'exception
     assert exc_info.value.status_code == 400
     assert "File too large" in exc_info.value.detail
@@ -183,16 +183,16 @@ async def test_get_file_url(storage_service, mock_supabase_client):
     bucket_name = "test-bucket"
     file_path = "test/path/test.txt"
     expiration = 120
-    
+
     # Obtenir l'URL
     url = await storage_service.get_file_url(bucket_name, file_path, expiration)
-    
+
     # Vérifier l'appel
     mock_supabase_client.storage.from_.assert_called_with(bucket_name)
     mock_supabase_client.storage.from_.return_value.create_signed_url.assert_called_with(
         path=file_path, expires_in=expiration
     )
-    
+
     # Vérifier la valeur de retour
     assert url == "https://example.com/test.txt?signature=abc"
 
@@ -203,14 +203,14 @@ async def test_download_file(storage_service, mock_supabase_client):
     # Paramètres
     bucket_name = "test-bucket"
     file_path = "test/path/test.txt"
-    
+
     # Télécharger le fichier
     result = await storage_service.download_file(bucket_name, file_path)
-    
+
     # Vérifier l'appel
     mock_supabase_client.storage.from_.assert_called_with(bucket_name)
     mock_supabase_client.storage.from_.return_value.download.assert_called_with(file_path)
-    
+
     # Vérifier la valeur de retour
     assert isinstance(result, io.BytesIO)
     assert result.getvalue() == b"test content"
@@ -222,7 +222,7 @@ async def test_delete_file(storage_service, mock_supabase_client, db):
     # Paramètres
     bucket_name = "test-bucket"
     file_path = "test/path/test.txt"
-    
+
     # Créer des métadonnées de fichier
     file_id = uuid.uuid4()
     file_meta = FileMetadata(
@@ -236,7 +236,7 @@ async def test_delete_file(storage_service, mock_supabase_client, db):
     )
     db.add(file_meta)
     db.commit()
-    
+
     # Supprimer le fichier
     result = await storage_service.delete_file(
         bucket_name=bucket_name,
@@ -244,14 +244,14 @@ async def test_delete_file(storage_service, mock_supabase_client, db):
         session=db,
         metadata_id=file_id
     )
-    
+
     # Vérifier l'appel
     mock_supabase_client.storage.from_.assert_called_with(bucket_name)
     mock_supabase_client.storage.from_.return_value.remove.assert_called_with(file_path)
-    
+
     # Vérifier la valeur de retour
     assert result is True
-    
+
     # Vérifier que les métadonnées ont été supprimées
     assert db.get(FileMetadata, file_id) is None
 
@@ -262,14 +262,14 @@ async def test_list_files(storage_service, mock_supabase_client):
     # Paramètres
     bucket_name = "test-bucket"
     path = "test/path"
-    
+
     # Lister les fichiers
     result = await storage_service.list_files(bucket_name, path)
-    
+
     # Vérifier l'appel
     mock_supabase_client.storage.from_.assert_called_with(bucket_name)
     mock_supabase_client.storage.from_.return_value.list.assert_called_with(path)
-    
+
     # Vérifier la valeur de retour
     assert len(result) == 2
     assert result[0]["name"] == "test1.txt"

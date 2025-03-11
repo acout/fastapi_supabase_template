@@ -46,7 +46,7 @@ class MockStorageService:
     async def upload_file(self, *args, **kwargs):
         # Simuler un chemin de fichier et des métadonnées
         path = f"test/{uuid.uuid4()}/test.txt"
-        
+
         # Si session est fourni, créer un objet FileMetadata
         session = kwargs.get("session")
         if session:
@@ -114,11 +114,11 @@ def client(superuser_auth):
     app.dependency_overrides[get_current_user] = get_test_superuser
     app.dependency_overrides[get_super_client] = get_test_super_client
     app.dependency_overrides["get_db"] = get_test_db
-    
+
     # Remplacer le service de stockage par notre mock
     from app.api.deps import get_storage_service_dep
     app.dependency_overrides[get_storage_service_dep] = get_test_storage_service
-    
+
     with TestClient(app) as c:
         # Ajouter l'en-tête d'authentification du superuser
         c.headers.update(superuser_auth)
@@ -149,14 +149,14 @@ def test_upload_profile_picture(client):
     file_content = b"test image content"
     file = {"file": ("test.jpg", file_content, "image/jpeg")}
     form_data = {"description": "Test profile picture"}
-    
+
     # Appeler l'endpoint
     response = client.post(
         "/api/v1/storage/upload/profile-picture",
         files=file,
         data=form_data
     )
-    
+
     # Vérifier la réponse
     assert response.status_code == 200
     data = response.json()
@@ -178,19 +178,19 @@ def test_upload_item_document(client, test_db, superuser_id):
     test_db.add(item)
     test_db.commit()
     test_db.refresh(item)
-    
+
     # Créer un fichier de test
     file_content = b"test document content"
     file = {"file": ("test.pdf", file_content, "application/pdf")}
     form_data = {"description": "Test document"}
-    
+
     # Appeler l'endpoint
     response = client.post(
         f"/api/v1/storage/upload/document/{item.id}",
         files=file,
         data=form_data
     )
-    
+
     # Vérifier la réponse
     assert response.status_code == 200
     data = response.json()
@@ -216,15 +216,15 @@ def test_list_user_files(client, test_db, superuser_id):
         )
         for i in range(3)
     ]
-    
+
     for file in files:
         test_db.add(file)
-    
+
     test_db.commit()
-    
+
     # Appeler l'endpoint
     response = client.get("/api/v1/storage/files")
-    
+
     # Vérifier la réponse
     assert response.status_code == 200
     data = response.json()
@@ -238,7 +238,7 @@ def test_get_file_metadata(client, test_db, superuser_id):
     """Test pour la récupération des métadonnées d'un fichier"""
     # Créer un fichier de test dans la base de données
     file_id = uuid.uuid4()
-    
+
     file = FileMetadata(
         id=file_id,
         owner_id=superuser_id,
@@ -248,13 +248,13 @@ def test_get_file_metadata(client, test_db, superuser_id):
         bucket_name="test-bucket",
         path=f"test/{superuser_id}/test.txt"
     )
-    
+
     test_db.add(file)
     test_db.commit()
-    
+
     # Appeler l'endpoint
     response = client.get(f"/api/v1/storage/file/{file_id}")
-    
+
     # Vérifier la réponse
     assert response.status_code == 200
     data = response.json()
@@ -267,7 +267,7 @@ def test_get_file_url(client, test_db, superuser_id):
     """Test pour la génération d'une URL de téléchargement"""
     # Créer un fichier de test dans la base de données
     file_id = uuid.uuid4()
-    
+
     file = FileMetadata(
         id=file_id,
         owner_id=superuser_id,
@@ -277,13 +277,13 @@ def test_get_file_url(client, test_db, superuser_id):
         bucket_name="test-bucket",
         path=f"test/{superuser_id}/test.txt"
     )
-    
+
     test_db.add(file)
     test_db.commit()
-    
+
     # Appeler l'endpoint
     response = client.get(f"/api/v1/storage/file/{file_id}/url")
-    
+
     # Vérifier la réponse
     assert response.status_code == 200
     data = response.json()
@@ -296,7 +296,7 @@ def test_update_file_metadata(client, test_db, superuser_id):
     """Test pour la mise à jour des métadonnées d'un fichier"""
     # Créer un fichier de test dans la base de données
     file_id = uuid.uuid4()
-    
+
     file = FileMetadata(
         id=file_id,
         owner_id=superuser_id,
@@ -307,22 +307,22 @@ def test_update_file_metadata(client, test_db, superuser_id):
         path=f"test/{superuser_id}/test.txt",
         description="Original description"
     )
-    
+
     test_db.add(file)
     test_db.commit()
-    
+
     # Données à mettre à jour
     update_data = {
         "filename": "updated.txt",
         "description": "Updated description"
     }
-    
+
     # Appeler l'endpoint
     response = client.put(
         f"/api/v1/storage/file/{file_id}",
         json=update_data
     )
-    
+
     # Vérifier la réponse
     assert response.status_code == 200
     data = response.json()
@@ -335,7 +335,7 @@ def test_delete_file(client, test_db, superuser_id):
     """Test pour la suppression d'un fichier"""
     # Créer un fichier de test dans la base de données
     file_id = uuid.uuid4()
-    
+
     file = FileMetadata(
         id=file_id,
         owner_id=superuser_id,
@@ -345,18 +345,18 @@ def test_delete_file(client, test_db, superuser_id):
         bucket_name="test-bucket",
         path=f"test/{superuser_id}/test.txt"
     )
-    
+
     test_db.add(file)
     test_db.commit()
-    
+
     # Appeler l'endpoint
     response = client.delete(f"/api/v1/storage/file/{file_id}")
-    
+
     # Vérifier la réponse
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "success"
-    
+
     # Vérifier que le fichier a été supprimé de la base de données
     file_in_db = test_db.get(FileMetadata, file_id)
     assert file_in_db is None
@@ -366,10 +366,10 @@ def test_file_not_found(client):
     """Test pour le cas où un fichier n'est pas trouvé"""
     # ID de fichier qui n'existe pas
     non_existent_id = uuid.uuid4()
-    
+
     # Appeler l'endpoint
     response = client.get(f"/api/v1/storage/file/{non_existent_id}")
-    
+
     # Vérifier la réponse
     assert response.status_code == 404
     data = response.json()
@@ -381,7 +381,7 @@ def test_invalid_file_type(client):
     # Fichier avec un type MIME non autorisé pour les images de profil
     file_content = b"test executable content"
     file = {"file": ("test.exe", file_content, "application/x-msdownload")}
-    
+
     # Appeler l'endpoint
     with patch('app.api.routes.storage.StorageService.upload_file') as mock_upload:
         # Configurer le mock pour lever une HTTPException
@@ -390,12 +390,12 @@ def test_invalid_file_type(client):
             status_code=400,
             detail="Unsupported file type"
         )
-        
+
         response = client.post(
             "/api/v1/storage/upload/profile-picture",
             files=file
         )
-    
+
     # Vérifier la réponse
     assert response.status_code == 400
     data = response.json()

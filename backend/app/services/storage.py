@@ -65,20 +65,20 @@ class StorageService:
 
             # Lire le contenu du fichier
             file_content = await file.read()
-            
+
             # Vérifier la taille du fichier
             if len(file_content) > bucket_class.max_file_size:
                 raise HTTPException(
                     status_code=400,
                     detail=f"File too large. Maximum size: {bucket_class.max_file_size/1024/1024}MB"
                 )
-            
+
             # Générer le chemin du fichier
             if custom_path:
                 file_path = custom_path
             else:
                 pattern = bucket_class.get_path_pattern()
-                
+
                 # Remplacer les placeholders dans le pattern
                 filename = file.filename or f"upload_{uuid.uuid4()}"
                 file_path = pattern.format(
@@ -86,14 +86,14 @@ class StorageService:
                     record_id=str(record_id) if record_id else "unknown",
                     filename=filename
                 )
-            
+
             # Upload le fichier
             response = await self.client.storage.from_(bucket_class.name).upload(
                 path=file_path,
                 file=file_content,
                 file_options={"content-type": file.content_type}
             )
-            
+
             # Enregistrer les métadonnées si session est fournie
             file_meta = None
             if session:
@@ -107,9 +107,9 @@ class StorageService:
                     item_id=record_id
                 )
                 file_meta = file_metadata.create(session, owner_id=user_id, obj_in=file_meta_data)
-            
+
             return file_path, file_meta
-        
+
         except HTTPException:
             # Renvoyer l'exception HTTP déjà levée
             raise
@@ -161,11 +161,11 @@ class StorageService:
         try:
             # Supprimer le fichier du stockage
             await self.client.storage.from_(bucket_name).remove(file_path)
-            
+
             # Supprimer les métadonnées si nécessaire
             if session and metadata_id:
                 file_metadata.remove(session, id=metadata_id)
-            
+
             return True
         except Exception as e:
             logger.error(f"Error deleting file: {str(e)}")

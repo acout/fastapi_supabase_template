@@ -101,7 +101,7 @@ def supabase():
 def superuser_auth() -> dict:
     """Obtient un jeton d'authentification pour le superuser"""
     supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-    
+
     # Essayer de se connecter avec le superuser
     try:
         auth_response = supabase_client.auth.sign_in_with_password({
@@ -121,7 +121,7 @@ def superuser_auth() -> dict:
         except Exception as signup_error:
             print(f"Erreur lors de la création du superuser: {signup_error}")
             raise
-    
+
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -138,7 +138,7 @@ async def async_supabase_client() -> AsyncClient:
 async def async_superuser_client() -> AsyncClient:
     """Client Supabase asynchrone authentifié en tant que superuser"""
     client = await create_async_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
-    
+
     # Se connecter avec le superuser
     try:
         auth_response = await client.auth.sign_in_with_password({
@@ -152,7 +152,7 @@ async def async_superuser_client() -> AsyncClient:
             "email": settings.FIRST_SUPERUSER,
             "password": settings.FIRST_SUPERUSER_PASSWORD
         })
-    
+
     return client
 
 
@@ -163,11 +163,11 @@ async def test_user(supabase):
         "email": fake.email(),
         "password": fake.password(length=12)
     }
-    
+
     user = await supabase.auth.sign_up(user_data)
-    
+
     yield user
-    
+
     # Cleanup: supprimer l'utilisateur et ses données
     await supabase.table("profiles").delete().eq("user_id", user.user.id).execute()
 
@@ -177,7 +177,7 @@ async def test_users(supabase):
     """Crée deux utilisateurs de test avec leurs clients"""
     users = []
     clients = []
-    
+
     for _ in range(2):
         user_data = {
             "email": fake.email(),
@@ -185,19 +185,19 @@ async def test_users(supabase):
         }
         user = await supabase.auth.sign_up(user_data)
         users.append(user)
-        
+
         client = create_client(
             settings.SUPABASE_URL,
             settings.SUPABASE_KEY,
             headers={"Authorization": f"Bearer {user.session.access_token}"}
         )
         clients.append(client)
-    
+
     yield {
         "users": users,
         "clients": clients
     }
-    
+
     # Cleanup
     for user in users:
         await supabase.table("profiles").delete().eq("user_id", user.user.id).execute()

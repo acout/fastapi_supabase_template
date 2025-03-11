@@ -1,41 +1,28 @@
-# Description
-<!-- Décrivez brièvement les changements apportés par cette PR -->
+## Description
 
-## Ticket Linear
-<!-- Lien vers le ticket Linear associé (ex: LIN-123) -->
+[LIN-XXX] Description du changement
 
 ## Type de changement
+
 - [ ] Nouvelle fonctionnalité
 - [ ] Correction de bug
 - [ ] Refactoring
 - [ ] Documentation
-- [ ] Amélioration de l'infrastructure
-- [ ] Autre: <!-- précisez -->
+- [ ] Infrastructure de développement
 
-## Liste des changements
-<!-- Liste des changements principaux -->
+## Comment tester le changement
 
-## Tests effectués
-<!-- Quels tests ont été réalisés pour valider ces changements? -->
-- [ ] Tests unitaires
-- [ ] Tests d'intégration
-- [ ] Tests manuels
+1. Étapes pour tester...
+2. ...
 
-## Checklist qualité de code
-- [ ] J'ai effectué une auto-revue de mon code
-- [ ] J'ai commenté mon code dans les parties complexes
-- [ ] J'ai mis à jour la documentation si nécessaire
-- [ ] Les tests ajoutés/existants passent localement
-- [ ] Les vérifications pre-commit (`pre-commit run --all-files`) passent
-- [ ] La couverture de test est à au moins 80% pour les fichiers modifiés (`scripts/check_test_coverage.sh`)
-- [ ] Le code suit les standards de codage du projet (voir `docs/CODING_STANDARDS.md`)
-- [ ] Les checks CI/CD passent
+## Checklist
 
-## Impact potentiel et régression
-<!-- Y a-t-il des fonctionnalités existantes qui pourraient être impactées par ces changements? -->
+- [ ] J'ai testé mes changements localement
+- [ ] Mes changements respectent les standards de codage
+- [ ] J'ai ajouté des tests pour couvrir mes changements
+- [ ] La documentation a été mise à jour
+- [ ] Les hooks pre-commit passent avec succès
 
-## Captures d'écran (si applicable)
-<!-- Ajoutez ici des captures d'écran illustrant le changement -->
+## Screenshots (si applicable)
 
 ## Notes supplémentaires
-<!-- Ajoutez ici toute information additionnelle pertinente -->
