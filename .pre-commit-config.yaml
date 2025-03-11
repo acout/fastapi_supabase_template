@@ -22,7 +22,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        args: [--write-changes, --ignore-words-list=classe,explicite,mis,branche,groupe,groupes,Branche,Processus,processus,reste,Mis,Classe]
+        args: [--write-changes, --ignore-words=.github/codespell-ignore.txt]
         files: \.(py|sh|json|yml|yaml|md)$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
