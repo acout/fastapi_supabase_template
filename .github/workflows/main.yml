@@ -43,7 +43,7 @@ jobs:
           # Autres variables d'environnement
 
       - name: Build Docker image
-        run: docker build -t fastapi-supabase-template:test .
+        run: docker build --build-arg BUILD_ENV=test -t fastapi-supabase-template:test .
 
       - name: Run tests with coverage in Docker
         run: |
@@ -96,7 +96,7 @@ jobs:
           # Créer un Dockerfile temporaire qui utilise la version Python spécifique
           echo "FROM python:${{ matrix.python-version }}-slim" > Dockerfile.test
           cat Dockerfile | grep -v "^FROM" >> Dockerfile.test
-          docker build -f Dockerfile.test -t fastapi-test:${{ matrix.python-version }} .
+          docker build --build-arg BUILD_ENV=test -f Dockerfile.test -t fastapi-test:${{ matrix.python-version }} .
 
       - name: Run tests in Docker
         run: |
