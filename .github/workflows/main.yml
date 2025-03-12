@@ -34,29 +34,23 @@ jobs:
     name: Build and Test
     needs: quality
     runs-on: ubuntu-latest
-    env:
-      PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-      POSTGRES_SERVER: ${{ secrets.POSTGRES_SERVER }}
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
-      FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Create .env.test file
-        run: |
-          echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" > .env.test
-          # Autres variables d'environnement
 
       - name: Build Docker image
         run: docker build --build-arg BUILD_ENV=test -t fastapi-supabase-template:test .
 
       - name: Run tests with coverage in Docker
         run: |
-          docker run --env-file .env.test -v $(pwd)/backend:/app/backend fastapi-supabase-template:test bash -c "cd /app/backend && python -m pytest --cov=app --cov-report=xml"
+          docker run -e PROJECT_NAME="${{ secrets.PROJECT_NAME }}" \
+            -e SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            -e SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" \
+            -e SUPABASE_SERVICE_KEY="${{ secrets.SUPABASE_SERVICE_KEY }}" \
+            -e POSTGRES_SERVER="${{ secrets.POSTGRES_SERVER }}" \
+            -e POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            -e FIRST_SUPERUSER="${{ secrets.FIRST_SUPERUSER }}" \
+            -e FIRST_SUPERUSER_PASSWORD="${{ secrets.FIRST_SUPERUSER_PASSWORD }}" \
+            -v $(pwd)/backend:/app/backend fastapi-supabase-template:test bash -c "cd /app/backend && python -m pytest --cov=app --cov-report=xml"
           # Copier les résultats de couverture depuis le conteneur
           docker cp $(docker ps -lq):/app/backend/coverage.xml ./backend/coverage.xml
 
@@ -76,28 +70,8 @@ jobs:
       matrix:
         python-version: ["3.11", "3.13"]  # 3.12 est déjà testé dans le job test
     runs-on: ubuntu-latest
-    env:
-      PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-      POSTGRES_SERVER: ${{ secrets.POSTGRES_SERVER }}
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
-      FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Create .env.test file
-        run: |
-          echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" > .env.test
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env.test
-          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env.test
-          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env.test
-          echo "POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}" >> .env.test
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env.test
-          echo "FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER }}" >> .env.test
-          echo "FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD }}" >> .env.test
 
       # Créer une image Docker modifiée pour la version Python spécifique
       - name: Build Docker image for Python ${{ matrix.python-version }}
@@ -109,7 +83,15 @@ jobs:
 
       - name: Run tests in Docker
         run: |
-          docker run --env-file .env.test -v $(pwd)/backend:/app/backend fastapi-test:${{ matrix.python-version }} bash -c "cd /app/backend && python -m pytest"
+          docker run -e PROJECT_NAME="${{ secrets.PROJECT_NAME }}" \
+            -e SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            -e SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" \
+            -e SUPABASE_SERVICE_KEY="${{ secrets.SUPABASE_SERVICE_KEY }}" \
+            -e POSTGRES_SERVER="${{ secrets.POSTGRES_SERVER }}" \
+            -e POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            -e FIRST_SUPERUSER="${{ secrets.FIRST_SUPERUSER }}" \
+            -e FIRST_SUPERUSER_PASSWORD="${{ secrets.FIRST_SUPERUSER_PASSWORD }}" \
+            -v $(pwd)/backend:/app/backend fastapi-test:${{ matrix.python-version }} bash -c "cd /app/backend && python -m pytest"
 
   # Déploiement (uniquement pour les tags de version)
   release:
