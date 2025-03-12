@@ -23,5 +23,5 @@ format: ## Formate le code
 	cd backend && ruff format .
 
 deploy-secrets: ## Déploie les secrets du fichier .env.test vers GitHub
-	chmod +x .devcontainer/deploy-secrets.sh
-	./.devcontainer/deploy-secrets.sh
+	chmod +x ./scripts/deploy-secrets.sh
+	./scripts/deploy-secrets.sh
