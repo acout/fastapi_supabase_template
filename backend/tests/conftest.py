@@ -16,6 +16,8 @@ required_vars = [
 
 # Vérifier d'abord si toutes les variables requises sont déjà dans l'environnement (CI)
 all_vars_present = all(os.getenv(var) for var in required_vars)
+missing_vars = [var for var in required_vars if not os.getenv(var)]
+print("Missing vars:", missing_vars)
 
 if not all_vars_present:
     # Tenter de charger .env.test ou .env

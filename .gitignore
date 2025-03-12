@@ -25,6 +25,7 @@ var/
 .env.local
 .env.development
 .env.test
+.env.staging
 .env.production
 .venv
 venv/
