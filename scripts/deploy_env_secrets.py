@@ -17,6 +17,7 @@ import os
 from pathlib import Path
 import dotenv
 from github import Github, GithubException
+import time
 
 # Configuration
 ENV_FILE = ".env.test"
@@ -100,7 +101,10 @@ def update_secrets(token, owner, repo_name, env_vars):
                 print(f"✅ Secret '{secret_name}' ajouté avec succès")
             except GithubException as e:
                 print(f"❌ Erreur lors de l'ajout du secret '{secret_name}': {e}")
+                # Afficher les détails de l'erreur pour le débogage
+                print(f"   Détails: {e.data}")
                 success = False
+            time.sleep(1)
 
     return success
 
