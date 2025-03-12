@@ -49,7 +49,7 @@ Ce script utilise GitHub CLI pour s'authentifier et déployer les secrets.
 
 ```bash
 # Installation des dépendances
-pip install PyGithub python-dotenv
+pip install python-dotenv>=1.0.0 PyGithub>=1.58.0
 
 # Exportez votre token GitHub (ou le script vous le demandera)
 export GITHUB_TOKEN=votre_token_github
