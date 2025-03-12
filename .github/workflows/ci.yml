@@ -25,6 +25,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: lint
+    env:
+      PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      POSTGRES_SERVER: ${{ secrets.POSTGRES_SERVER }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
+      FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -34,16 +43,6 @@ jobs:
       - name: Create test environment file
         run: |
           # Créer le fichier .env.test avec les secrets GitHub
-          cat > .env.test << EOF
-          SUPABASE_URL=${{ secrets.SUPABASE_URL_TEST }}
-          SUPABASE_KEY=${{ secrets.SUPABASE_KEY_TEST }}
-          POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER_TEST }}
-          POSTGRES_USER=${{ secrets.POSTGRES_USER_TEST }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_TEST }}
-          POSTGRES_DB=${{ secrets.POSTGRES_DB_TEST }}
-          FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER_TEST }}
-          FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD_TEST }}
-          EOF
           # Masquer le fichier pour éviter qu'il ne soit affiché dans les logs
           echo "::add-mask::$(cat .env.test)"
           echo "Test environment file created successfully"

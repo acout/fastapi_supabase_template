@@ -25,7 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install pre-commit --sytem
+          uv pip install pre-commit --system
           uv pip install -e . --system
 
       - name: Run pre-commit checks
@@ -38,6 +38,7 @@ jobs:
       PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
       POSTGRES_SERVER: ${{ secrets.POSTGRES_SERVER }}
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
