@@ -14,23 +14,27 @@ required_vars = [
     "FIRST_SUPERUSER_PASSWORD",
 ]
 
-# Vérifier si toutes les variables sont déjà définies dans l'environnement
+# Vérifier d'abord si toutes les variables requises sont déjà dans l'environnement (CI)
 all_vars_present = all(os.getenv(var) for var in required_vars)
 
 if not all_vars_present:
-    # Tenter de charger .env.test d'abord, puis .env si nécessaire
+    # Tenter de charger .env.test ou .env
     test_env_path = Path(__file__).parent.parent.parent / ".env.test"
-    if not test_env_path.exists():
-        test_env_path = Path(__file__).parent.parent.parent / ".env"
-
-    # Charger le fichier s'il existe
     if test_env_path.exists():
         print(f"Loading test environment from: {test_env_path}")
         load_dotenv(test_env_path)
     else:
-        print("No .env or .env.test file found, using environment variables")
+        # Si .env.test n'existe pas, essayer .env
+        test_env_path = Path(__file__).parent.parent.parent / ".env"
+        if test_env_path.exists():
+            print(f"Loading test environment from: {test_env_path}")
+            load_dotenv(test_env_path)
+        else:
+            print(
+                "No .env.test or .env file found, using environment variables directly"
+            )
 
-# Vérifier à nouveau les variables après avoir chargé le fichier
+# Vérifier si des variables sont toujours manquantes après avoir essayé de charger depuis les fichiers
 missing_vars = [var for var in required_vars if not os.getenv(var)]
 if missing_vars:
     raise ValueError(
