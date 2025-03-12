@@ -31,17 +31,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Setup test environment
+      - name: Create test environment file
         run: |
-          # Créer un fichier temporaire de configuration de test
-          touch .env.test
-          # Rechercher et modifier le code de test pour skip les tests nécessitant Supabase
-          if [ -f "backend/tests/conftest.py" ]; then
-            # Recherche la partie qui vérifie les variables et désactive cette vérification 
-            sed -i 's/raise ValueError("Missing required environment variables in .env.test:/print("WARNING: Missing environment variables, some tests will be skipped:/' backend/tests/conftest.py
-          fi
-          
-          echo "Test environment modified to skip connection tests"
+          # Créer le fichier .env.test avec les secrets GitHub
+          cat > .env.test << EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY_TEST }}
+          POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER_TEST }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER_TEST }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_TEST }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB_TEST }}
+          FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER_TEST }}
+          FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD_TEST }}
+          EOF
+          # Masquer le fichier pour éviter qu'il ne soit affiché dans les logs
+          echo "::add-mask::$(cat .env.test)"
+          echo "Test environment file created successfully"
       - name: Install dependencies
         run: |
           pip install uv
@@ -56,11 +61,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd backend
-          # Exécuter les tests avec une option pour sauter les tests qui nécessitent Supabase
-          pytest --cov=app --cov-report=xml -k "not supabase"
-        env:
-          # Variables d'environnement factices utilisées uniquement en CI
-          CI_TESTING: "true"
+          pytest --cov=app --cov-report=xml
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:
