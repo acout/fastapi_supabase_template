@@ -1,5 +1,5 @@
 # Ref: https://github.com/fastapi/full-stack-fastapi-template/blob/master/backend/Dockerfile
-FROM python:3.12-slim-bookworm
+FROM mcr.microsoft.com/devcontainers/python:1-3.12-bullseye
 
 # Print logs immediately
 # Ref: https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUNBUFFERED
@@ -17,25 +17,17 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        libpq-dev \
-        gcc \
-        sudo \
-        git \
-        curl \
-        ca-certificates \
-        wget \
+    libpq-dev \
+    gcc \
+    sudo \
+    git \
+    curl \
+    ca-certificates \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
-
-# Créer l'utilisateur seulement si USERNAME est défini et si BUILD_ENV=dev
-RUN if [ -n "$USERNAME" ] && [ "$BUILD_ENV" = "dev" ]; then \
-    groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME; \
-    fi
 
 # Install UV
 COPY --from=ghcr.io/astral-sh/uv:0.6.4 /uv /uvx /bin/

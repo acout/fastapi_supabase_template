@@ -14,6 +14,9 @@ dependencies = [
     "tenacity>=9.0.0",
     "psycopg2-binary>=2.9.10",
     "psycopg>=3.2.4",
+    "python-dotenv>=1.0.0",
+    "PyGithub>=1.58.0",
+    "pre-commit>=3.8.0"
 ]
 
 [dependency-groups]

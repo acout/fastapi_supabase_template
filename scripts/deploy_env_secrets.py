@@ -13,10 +13,9 @@ Prérequis :
     - Un fichier .env.test à la racine du projet
 """
 
-import base64
 import os
 from pathlib import Path
-
+import importlib.util
 import dotenv
 from github import Github, GithubException
 
@@ -112,16 +111,12 @@ def main():
     print("📝 Déploiement des secrets GitHub depuis le fichier .env.test")
 
     # Vérifier les prérequis
-    try:
-        import github
-    except ImportError:
+    if not importlib.util.find_spec("PyGithub"):
         print("❌ Le package PyGithub n'est pas installé. Installez-le avec:")
         print("   pip install PyGithub")
         return
 
-    try:
-        import dotenv
-    except ImportError:
+    if not importlib.util.find_spec("dotenv"):
         print("❌ Le package python-dotenv n'est pas installé. Installez-le avec:")
         print("   pip install python-dotenv")
         return
