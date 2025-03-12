@@ -1,0 +1,79 @@
+# Gestion des Secrets
+
+Ce document explique comment gérer les secrets dans le projet, notamment pour les tests en CI/CD.
+
+## Principes généraux
+
+1. **Ne jamais versionner les secrets** : Les fichiers `.env`, `.env.test`, etc. sont exclus du contrôle de version via `.gitignore`.
+2. **Utiliser les secrets GitHub** : Pour le CI/CD, tous les secrets sont stockés dans GitHub Actions.
+3. **Nomenclature cohérente** : Les secrets pour les tests CI ont le suffixe `_TEST`.
+
+## Configuration locale
+
+### Fichier `.env.test`
+
+Créez un fichier `.env.test` à la racine du projet avec les variables suivantes :
+
+```
+SUPABASE_URL=...
+SUPABASE_KEY=...
+POSTGRES_SERVER=...
+POSTGRES_USER=...
+POSTGRES_PASSWORD=...
+POSTGRES_DB=...
+FIRST_SUPERUSER=...
+FIRST_SUPERUSER_PASSWORD=...
+```
+
+## Déploiement des secrets vers GitHub
+
+Pour synchroniser les secrets de votre fichier `.env.test` vers GitHub Actions :
+
+### 1. Prérequis
+
+```bash
+pip install PyGithub python-dotenv
+```
+
+### 2. Exécuter le script de déploiement
+
+```bash
+python scripts/deploy_env_secrets.py
+```
+
+Le script vous demandera un token GitHub avec les permissions `repo` si la variable d'environnement `GITHUB_TOKEN` n'est pas définie.
+
+### 3. Vérification
+
+Après exécution, vérifiez les secrets dans votre dépôt GitHub :
+
+1. Allez sur GitHub → votre dépôt → Settings → Secrets and variables → Actions
+2. Vous devriez voir tous vos secrets avec le suffixe `_TEST`
+
+## Utilisation dans le CI
+
+Les secrets sont utilisés dans le workflow CI pour créer un fichier `.env.test` temporaire :
+
+```yaml
+- name: Create test environment file
+  run: |
+    cat > .env.test << EOF
+    SUPABASE_URL=${{ secrets.SUPABASE_URL_TEST }}
+    SUPABASE_KEY=${{ secrets.SUPABASE_KEY_TEST }}
+    # ... autres variables
+    EOF
+```
+
+## Sécurité
+
+- Les secrets GitHub sont chiffrés et ne sont jamais exposés dans les logs.
+- L'option `::add-mask::` est utilisée pour masquer les contenus sensibles.
+- Les forked PR n'ont pas accès aux secrets (protection par défaut de GitHub).
+
+## Création d'un environnement de test isolé
+
+Pour les tests CI, il est recommandé de créer un environnement Supabase et une base de données PostgreSQL isolés pour éviter toute contamination des données de production.
+
+1. Créez un projet Supabase dédié aux tests
+2. Configurez une base de données PostgreSQL temporaire
+3. Utilisez ces identifiants dans vos secrets GitHub avec le suffixe `_TEST`
