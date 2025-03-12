@@ -7,7 +7,7 @@ help: ## Affiche l'aide
 
 install: ## Installe les dépendances du projet
 	pip install -e ./backend
-	pip install pre-commit python-dotenv PyGithub
+	pip install pre-commit python-dotenv>=1.0.0 PyGithub>=1.58.0
 	pre-commit install
 
 dev: ## Démarre le serveur de développement
