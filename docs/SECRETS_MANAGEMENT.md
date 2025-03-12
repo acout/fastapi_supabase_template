@@ -40,7 +40,7 @@ make deploy-secrets
 ou
 
 ```bash
-./.devcontainer/deploy-secrets.sh
+./scripts/deploy-secrets.sh
 ```
 
 Ce script utilise GitHub CLI pour s'authentifier et déployer les secrets.
