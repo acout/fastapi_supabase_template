@@ -61,7 +61,7 @@ jobs:
   # Tests multi-plateforme (optionnel, uniquement sur main)
   matrix-test:
     name: Test Python ${{ matrix.python-version }}
-    needs: test
+    needs: build-and-test
     if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
@@ -105,7 +105,7 @@ jobs:
   # Déploiement (uniquement pour les tags de version)
   release:
     name: Bump Version and Release
-    needs: [test, matrix-test]
+    needs: [build-and-test, matrix-test]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
