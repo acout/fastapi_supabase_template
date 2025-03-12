@@ -10,9 +10,7 @@ from app.models.file import FileMetadata, FileMetadataCreate, FileMetadataUpdate
 
 # Créer un moteur de base de données en mémoire pour les tests
 engine = create_engine(
-    "sqlite://",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+    "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
 )
 
 
@@ -36,7 +34,7 @@ def test_create_file_metadata(db):
         bucket_name="test-bucket",
         path="test/path/test.txt",
         description="Test description",
-        item_id=item_id
+        item_id=item_id,
     )
 
     # Créer les métadonnées
@@ -69,7 +67,7 @@ def test_get_file_metadata(db):
         size=100,
         bucket_name="test-bucket",
         path="test/path/test.txt",
-        description="Test description"
+        description="Test description",
     )
     db.add(file_meta)
     db.commit()
@@ -89,7 +87,9 @@ def test_update_file_metadata(db):
     # Créer un fichier de test
     file_id = uuid.uuid4()
     owner_id = uuid.uuid4()
-    created_at = datetime.utcnow() - timedelta(days=1)  # Date antérieure pour tester updated_at
+    created_at = datetime.utcnow() - timedelta(
+        days=1
+    )  # Date antérieure pour tester updated_at
     file_meta = FileMetadata(
         id=file_id,
         owner_id=owner_id,
@@ -100,15 +100,14 @@ def test_update_file_metadata(db):
         path="test/path/test.txt",
         description="Original description",
         created_at=created_at,
-        updated_at=created_at
+        updated_at=created_at,
     )
     db.add(file_meta)
     db.commit()
 
     # Données pour la mise à jour
     update_data = FileMetadataUpdate(
-        filename="updated.txt",
-        description="Updated description"
+        filename="updated.txt", description="Updated description"
     )
 
     # Mettre à jour les métadonnées
@@ -136,7 +135,7 @@ def test_delete_file_metadata(db):
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path="test/path/test.txt"
+        path="test/path/test.txt",
     )
     db.add(file_meta)
     db.commit()
@@ -169,7 +168,7 @@ def test_get_by_item_id(db):
             size=100,
             bucket_name="test-bucket",
             path=f"test/path/test{i}.txt",
-            item_id=item_id
+            item_id=item_id,
         )
         for i in range(3)
     ]
@@ -183,7 +182,7 @@ def test_get_by_item_id(db):
         size=100,
         bucket_name="test-bucket",
         path="test/path/other.txt",
-        item_id=uuid.uuid4()  # ID différent
+        item_id=uuid.uuid4(),  # ID différent
     )
 
     # Ajouter tous les fichiers à la base de données
@@ -215,7 +214,7 @@ def test_get_by_user_id(db):
             content_type="text/plain",
             size=100,
             bucket_name="test-bucket",
-            path=f"test/path/test{i}.txt"
+            path=f"test/path/test{i}.txt",
         )
         for i in range(3)
     ]
@@ -228,7 +227,7 @@ def test_get_by_user_id(db):
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path="test/path/other.txt"
+        path="test/path/other.txt",
     )
 
     # Ajouter tous les fichiers à la base de données
@@ -261,7 +260,7 @@ def test_get_by_bucket(db):
             content_type="text/plain",
             size=100,
             bucket_name=bucket_name,
-            path=f"test/path/test{i}.txt"
+            path=f"test/path/test{i}.txt",
         )
         for i in range(3)
     ]
@@ -274,7 +273,7 @@ def test_get_by_bucket(db):
         content_type="text/plain",
         size=100,
         bucket_name="other-bucket",  # Nom différent
-        path="test/path/other.txt"
+        path="test/path/other.txt",
     )
 
     # Ajouter tous les fichiers à la base de données

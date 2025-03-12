@@ -3,9 +3,10 @@ from dotenv import load_dotenv
 import psycopg2
 from urllib.parse import quote_plus
 
+
 def test_connection():
     # 1. Charger et afficher les variables d'environnement
-    env_path = os.path.join(os.getcwd(), '.env')
+    env_path = os.path.join(os.getcwd(), ".env")
     load_dotenv(env_path)
 
     # 2. Récupérer les paramètres
@@ -14,7 +15,7 @@ def test_connection():
         "port": os.getenv("POSTGRES_PORT", "5432"),
         "database": os.getenv("POSTGRES_DB"),
         "user": os.getenv("POSTGRES_USER"),
-        "password": os.getenv("POSTGRES_PASSWORD")
+        "password": os.getenv("POSTGRES_PASSWORD"),
     }
 
     # 3. Afficher les paramètres (sans le mot de passe)
@@ -38,7 +39,7 @@ def test_connection():
             port=db_params["port"],
             database=db_params["database"],
             user=db_params["user"],
-            password=db_params["password"]
+            password=db_params["password"],
         )
         print("✅ Connexion réussie !")
 
@@ -69,6 +70,7 @@ def test_connection():
         else:
             print("→ Erreur non identifiée, voir le message complet :")
             print(str(e))
+
 
 if __name__ == "__main__":
     test_connection()

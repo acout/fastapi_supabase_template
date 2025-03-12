@@ -33,27 +33,36 @@ class CRUDFileMetadata(CRUDBase[FileMetadata, FileMetadataCreate, FileMetadataUp
         self, session: Session, *, item_id: uuid.UUID, skip: int = 0, limit: int = 100
     ) -> list[FileMetadata]:
         """Récupérer les fichiers associés à un item"""
-        statement = select(self.model)\
-            .where(self.model.item_id == item_id)\
-            .offset(skip).limit(limit)
+        statement = (
+            select(self.model)
+            .where(self.model.item_id == item_id)
+            .offset(skip)
+            .limit(limit)
+        )
         return list(session.exec(statement))
 
     def get_by_user_id(
         self, session: Session, *, user_id: uuid.UUID, skip: int = 0, limit: int = 100
     ) -> list[FileMetadata]:
         """Récupérer les fichiers d'un utilisateur"""
-        statement = select(self.model)\
-            .where(self.model.owner_id == user_id)\
-            .offset(skip).limit(limit)
+        statement = (
+            select(self.model)
+            .where(self.model.owner_id == user_id)
+            .offset(skip)
+            .limit(limit)
+        )
         return list(session.exec(statement))
 
     def get_by_bucket(
         self, session: Session, *, bucket_name: str, skip: int = 0, limit: int = 100
     ) -> list[FileMetadata]:
         """Récupérer les fichiers dans un bucket spécifique"""
-        statement = select(self.model)\
-            .where(self.model.bucket_name == bucket_name)\
-            .offset(skip).limit(limit)
+        statement = (
+            select(self.model)
+            .where(self.model.bucket_name == bucket_name)
+            .offset(skip)
+            .limit(limit)
+        )
         return list(session.exec(statement))
 
 
