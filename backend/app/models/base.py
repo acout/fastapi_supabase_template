@@ -1,14 +1,15 @@
 import uuid
-from sqlmodel import Field, SQLModel, Column, UUID, text
-from typing import Optional, ClassVar, Dict, Tuple, List, Type
 from dataclasses import dataclass
 from enum import Enum  # Pour lier avec nos modèles
+from typing import ClassVar
+
+from sqlmodel import UUID, Field, SQLModel, text
 
 
 @dataclass
 class PolicyDefinition:
-    using: Optional[str] = None  # Pour filtrer les lignes existantes
-    check: Optional[str] = None  # Pour valider les nouvelles valeurs
+    using: str | None = None  # Pour filtrer les lignes existantes
+    check: str | None = None  # Pour valider les nouvelles valeurs
 
 
 class RLSModel(SQLModel):
@@ -71,7 +72,7 @@ class RLSModel(SQLModel):
         )
 
     @classmethod
-    def get_policies(cls) -> Dict[str, PolicyDefinition]:
+    def get_policies(cls) -> dict[str, PolicyDefinition]:
         """Retourne toutes les politiques actives"""
         policies = {}
 
@@ -101,17 +102,17 @@ class StorageOperation(str, Enum):
 @dataclass
 class BucketPolicy:
     operation: StorageOperation
-    using: Optional[str] = None
-    check: Optional[str] = None
-    name: Optional[str] = None
+    using: str | None = None
+    check: str | None = None
+    name: str | None = None
 
 
 class StorageBucket:
     name: ClassVar[str]
     public: ClassVar[bool] = False
-    allowed_mime_types: ClassVar[List[str]] = ["*/*"]
+    allowed_mime_types: ClassVar[list[str]] = ["*/*"]
     max_file_size: ClassVar[int] = 50 * 1024 * 1024
-    linked_model: ClassVar[Optional[Type[RLSModel]]] = None  # Modèle lié
+    linked_model: ClassVar[type[RLSModel] | None] = None  # Modèle lié
 
     @classmethod
     def get_path_pattern(cls) -> str:
@@ -121,17 +122,17 @@ class StorageBucket:
         return "{user_id}/{filename}"
 
     @classmethod
-    def get_policies(cls) -> List[BucketPolicy]:
+    def get_policies(cls) -> list[BucketPolicy]:
         """Retourne une politique RLS simple pour le storage"""
         size_check = f"(metadata->>'size')::bigint <= {cls.max_file_size}"
         mime_check = (
-            f"metadata->>'mimetype' IN ('" + "', '".join(cls.allowed_mime_types) + "')"
+            "metadata->>'mimetype' IN ('" + "', '".join(cls.allowed_mime_types) + "')"
         )
 
         table_prefix = cls.name
 
         # TODO: Ajouter la vérification du size et du mime_type
-        base_policy = f"""(
+        base_policy = """(
             auth.role() = 'authenticated' AND
             (storage.foldername(name))[1] = (select auth.uid()::text)
         )"""

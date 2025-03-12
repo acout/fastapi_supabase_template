@@ -1,14 +1,12 @@
 import uuid
-from typing import List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from app.api.deps import CurrentUser, SessionDep, StorageServiceDep
 from app.crud import file_metadata
 from app.models.file import FileMetadata, FileMetadataPublic, FileMetadataUpdate
 from app.models.storage import ItemDocuments, ProfilePictures
-from app.services.storage import StorageService
 
 router = APIRouter(prefix="/storage", tags=["storage"])
 
@@ -16,7 +14,7 @@ router = APIRouter(prefix="/storage", tags=["storage"])
 @router.post("/upload/profile-picture", response_model=FileMetadataPublic)
 async def upload_profile_picture(
     file: UploadFile = File(...),
-    description: Optional[str] = Form(None),
+    description: str | None = Form(None),
     user: CurrentUser = None,
     session: SessionDep = None,
     storage_service: StorageServiceDep = None,
@@ -37,7 +35,7 @@ async def upload_profile_picture(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le fichier doit être une image"
+            detail="Le fichier doit être une image",
         )
 
     # Upload du fichier
@@ -46,13 +44,13 @@ async def upload_profile_picture(
         file=file,
         user_id=uuid.UUID(user.id),
         description=description,
-        session=session
+        session=session,
     )
 
     if not file_meta:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur lors de l'enregistrement des métadonnées du fichier"
+            detail="Erreur lors de l'enregistrement des métadonnées du fichier",
         )
 
     return file_meta
@@ -62,7 +60,7 @@ async def upload_profile_picture(
 async def upload_item_document(
     item_id: uuid.UUID,
     file: UploadFile = File(...),
-    description: Optional[str] = Form(None),
+    description: str | None = Form(None),
     user: CurrentUser = None,
     session: SessionDep = None,
     storage_service: StorageServiceDep = None,
@@ -82,14 +80,17 @@ async def upload_item_document(
     """
     # Vérifier si l'item existe et appartient à l'utilisateur
     from app.models.item import Item
-    statement = select(Item).where(Item.id == item_id, Item.owner_id == uuid.UUID(user.id))
+
+    statement = select(Item).where(
+        Item.id == item_id, Item.owner_id == uuid.UUID(user.id)
+    )
     result = session.exec(statement)
     item = result.first()
 
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Item avec l'id {item_id} non trouvé ou n'appartient pas à l'utilisateur"
+            detail=f"Item avec l'id {item_id} non trouvé ou n'appartient pas à l'utilisateur",
         )
 
     # Upload du fichier
@@ -99,27 +100,27 @@ async def upload_item_document(
         user_id=uuid.UUID(user.id),
         record_id=item_id,
         description=description,
-        session=session
+        session=session,
     )
 
     if not file_meta:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur lors de l'enregistrement des métadonnées du fichier"
+            detail="Erreur lors de l'enregistrement des métadonnées du fichier",
         )
 
     return file_meta
 
 
-@router.get("/files", response_model=List[FileMetadataPublic])
+@router.get("/files", response_model=list[FileMetadataPublic])
 async def list_user_files(
-    bucket_name: Optional[str] = Query(None),
-    item_id: Optional[uuid.UUID] = Query(None),
+    bucket_name: str | None = Query(None),
+    item_id: uuid.UUID | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     user: CurrentUser = None,
     session: SessionDep = None,
-) -> List[FileMetadata]:
+) -> list[FileMetadata]:
     """Liste les fichiers de l'utilisateur
 
     Args:
@@ -137,21 +138,25 @@ async def list_user_files(
 
     # Filtrage selon les paramètres
     if item_id:
-        return file_metadata.get_by_item_id(session, item_id=item_id, skip=skip, limit=limit)
+        return file_metadata.get_by_item_id(
+            session, item_id=item_id, skip=skip, limit=limit
+        )
     elif bucket_name:
-        files = file_metadata.get_by_bucket(session, bucket_name=bucket_name, skip=skip, limit=limit)
+        files = file_metadata.get_by_bucket(
+            session, bucket_name=bucket_name, skip=skip, limit=limit
+        )
         # Filtrer par propriétaire (sécurité supplémentaire)
         return [f for f in files if f.owner_id == user_id]
     else:
         # Par défaut, retourner tous les fichiers de l'utilisateur
-        return file_metadata.get_by_user_id(session, user_id=user_id, skip=skip, limit=limit)
+        return file_metadata.get_by_user_id(
+            session, user_id=user_id, skip=skip, limit=limit
+        )
 
 
 @router.get("/file/{file_id}", response_model=FileMetadataPublic)
 async def get_file_metadata(
-    file_id: uuid.UUID,
-    user: CurrentUser = None,
-    session: SessionDep = None,
+    file_id: uuid.UUID, user: CurrentUser = None, session: SessionDep = None
 ) -> FileMetadata:
     """Récupère les métadonnées d'un fichier
 
@@ -168,7 +173,7 @@ async def get_file_metadata(
     if not file_meta or file_meta.owner_id != uuid.UUID(user.id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur"
+            detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur",
         )
 
     return file_meta
@@ -177,7 +182,12 @@ async def get_file_metadata(
 @router.get("/file/{file_id}/url")
 async def get_file_download_url(
     file_id: uuid.UUID,
-    expiration: int = Query(60, gt=0, le=86400, description="Durée de validité de l'URL en secondes (max 24h)"),
+    expiration: int = Query(
+        60,
+        gt=0,
+        le=86400,
+        description="Durée de validité de l'URL en secondes (max 24h)",
+    ),
     user: CurrentUser = None,
     session: SessionDep = None,
     storage_service: StorageServiceDep = None,
@@ -199,14 +209,14 @@ async def get_file_download_url(
     if not file_meta or file_meta.owner_id != uuid.UUID(user.id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur"
+            detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur",
         )
 
     # Générer l'URL signée
     signed_url = await storage_service.get_file_url(
         bucket_name=file_meta.bucket_name,
         file_path=file_meta.path,
-        expiration=expiration
+        expiration=expiration,
     )
 
     return {"url": signed_url, "expires_in": expiration}
@@ -236,7 +246,7 @@ async def update_file_metadata(
     if not file_meta or file_meta.owner_id != uuid.UUID(user.id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur"
+            detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur",
         )
 
     # Mise à jour des métadonnées
@@ -245,7 +255,7 @@ async def update_file_metadata(
     if not updated_meta:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur lors de la mise à jour des métadonnées"
+            detail="Erreur lors de la mise à jour des métadonnées",
         )
 
     return updated_meta
@@ -275,7 +285,7 @@ async def delete_file(
     if not file_meta or file_meta.owner_id != uuid.UUID(user.id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur"
+            detail=f"Fichier avec l'id {file_id} non trouvé ou n'appartient pas à l'utilisateur",
         )
 
     # Supprimer le fichier et ses métadonnées
@@ -283,7 +293,7 @@ async def delete_file(
         bucket_name=file_meta.bucket_name,
         file_path=file_meta.path,
         session=session,
-        metadata_id=file_id
+        metadata_id=file_id,
     )
 
     return {"status": "success", "message": "Fichier supprimé avec succès"}

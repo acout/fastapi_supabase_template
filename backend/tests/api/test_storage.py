@@ -1,10 +1,9 @@
 import io
 import uuid
-from typing import Dict, Generator
-from unittest.mock import AsyncMock, MagicMock, patch
+from collections.abc import Generator
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi import UploadFile
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
@@ -18,9 +17,7 @@ from app.schemas.auth import UserIn
 
 # Créer un moteur de base de données en mémoire pour les tests
 engine = create_engine(
-    "sqlite://",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+    "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
 )
 
 
@@ -52,14 +49,16 @@ class MockStorageService:
         if session:
             file_meta = FileMetadata(
                 id=uuid.uuid4(),
-                owner_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),  # ID du superuser
+                owner_id=uuid.UUID(
+                    "11111111-1111-1111-1111-111111111111"
+                ),  # ID du superuser
                 filename=kwargs.get("file").filename or "test.txt",
                 content_type=kwargs.get("file").content_type or "text/plain",
                 size=100,
                 bucket_name=kwargs.get("bucket_class").name,
                 path=path,
                 description=kwargs.get("description"),
-                item_id=kwargs.get("record_id")
+                item_id=kwargs.get("record_id"),
             )
             session.add(file_meta)
             session.commit()
@@ -84,7 +83,7 @@ class MockStorageService:
     async def list_files(self, bucket_name, path=""):
         return [
             {"name": "test1.txt", "id": "123", "metadata": {}},
-            {"name": "test2.txt", "id": "456", "metadata": {}}
+            {"name": "test2.txt", "id": "456", "metadata": {}},
         ]
 
     async def initialize_buckets(self, buckets):
@@ -101,7 +100,7 @@ async def get_test_super_client():
     mock_client.auth.get_user.return_value = {
         "user": {
             "id": "11111111-1111-1111-1111-111111111111",
-            "email": settings.FIRST_SUPERUSER
+            "email": settings.FIRST_SUPERUSER,
         }
     }
     return mock_client
@@ -117,6 +116,7 @@ def client(superuser_auth):
 
     # Remplacer le service de stockage par notre mock
     from app.api.deps import get_storage_service_dep
+
     app.dependency_overrides[get_storage_service_dep] = get_test_storage_service
 
     with TestClient(app) as c:
@@ -152,9 +152,7 @@ def test_upload_profile_picture(client):
 
     # Appeler l'endpoint
     response = client.post(
-        "/api/v1/storage/upload/profile-picture",
-        files=file,
-        data=form_data
+        "/api/v1/storage/upload/profile-picture", files=file, data=form_data
     )
 
     # Vérifier la réponse
@@ -170,11 +168,8 @@ def test_upload_item_document(client, test_db, superuser_id):
     """Test pour l'upload d'un document lié à un item"""
     # Créer un item de test dans la base de données
     from app.models.item import Item
-    item = Item(
-        id=uuid.uuid4(),
-        title="Test item",
-        owner_id=superuser_id
-    )
+
+    item = Item(id=uuid.uuid4(), title="Test item", owner_id=superuser_id)
     test_db.add(item)
     test_db.commit()
     test_db.refresh(item)
@@ -186,9 +181,7 @@ def test_upload_item_document(client, test_db, superuser_id):
 
     # Appeler l'endpoint
     response = client.post(
-        f"/api/v1/storage/upload/document/{item.id}",
-        files=file,
-        data=form_data
+        f"/api/v1/storage/upload/document/{item.id}", files=file, data=form_data
     )
 
     # Vérifier la réponse
@@ -212,7 +205,7 @@ def test_list_user_files(client, test_db, superuser_id):
             content_type="text/plain",
             size=100,
             bucket_name="test-bucket",
-            path=f"test/{superuser_id}/test{i}.txt"
+            path=f"test/{superuser_id}/test{i}.txt",
         )
         for i in range(3)
     ]
@@ -246,7 +239,7 @@ def test_get_file_metadata(client, test_db, superuser_id):
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path=f"test/{superuser_id}/test.txt"
+        path=f"test/{superuser_id}/test.txt",
     )
 
     test_db.add(file)
@@ -275,7 +268,7 @@ def test_get_file_url(client, test_db, superuser_id):
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path=f"test/{superuser_id}/test.txt"
+        path=f"test/{superuser_id}/test.txt",
     )
 
     test_db.add(file)
@@ -305,23 +298,17 @@ def test_update_file_metadata(client, test_db, superuser_id):
         size=100,
         bucket_name="test-bucket",
         path=f"test/{superuser_id}/test.txt",
-        description="Original description"
+        description="Original description",
     )
 
     test_db.add(file)
     test_db.commit()
 
     # Données à mettre à jour
-    update_data = {
-        "filename": "updated.txt",
-        "description": "Updated description"
-    }
+    update_data = {"filename": "updated.txt", "description": "Updated description"}
 
     # Appeler l'endpoint
-    response = client.put(
-        f"/api/v1/storage/file/{file_id}",
-        json=update_data
-    )
+    response = client.put(f"/api/v1/storage/file/{file_id}", json=update_data)
 
     # Vérifier la réponse
     assert response.status_code == 200
@@ -343,7 +330,7 @@ def test_delete_file(client, test_db, superuser_id):
         content_type="text/plain",
         size=100,
         bucket_name="test-bucket",
-        path=f"test/{superuser_id}/test.txt"
+        path=f"test/{superuser_id}/test.txt",
     )
 
     test_db.add(file)
@@ -383,18 +370,15 @@ def test_invalid_file_type(client):
     file = {"file": ("test.exe", file_content, "application/x-msdownload")}
 
     # Appeler l'endpoint
-    with patch('app.api.routes.storage.StorageService.upload_file') as mock_upload:
+    with patch("app.api.routes.storage.StorageService.upload_file") as mock_upload:
         # Configurer le mock pour lever une HTTPException
         from fastapi import HTTPException
+
         mock_upload.side_effect = HTTPException(
-            status_code=400,
-            detail="Unsupported file type"
+            status_code=400, detail="Unsupported file type"
         )
 
-        response = client.post(
-            "/api/v1/storage/upload/profile-picture",
-            files=file
-        )
+        response = client.post("/api/v1/storage/upload/profile-picture", files=file)
 
     # Vérifier la réponse
     assert response.status_code == 400

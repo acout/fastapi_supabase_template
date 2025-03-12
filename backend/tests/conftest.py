@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Charger .env.test AVANT tout autre import
@@ -24,7 +25,7 @@ required_vars = [
     "POSTGRES_SERVER",
     "POSTGRES_USER",
     "FIRST_SUPERUSER",
-    "FIRST_SUPERUSER_PASSWORD"
+    "FIRST_SUPERUSER_PASSWORD",
 ]
 
 missing_vars = [var for var in required_vars if not os.getenv(var)]
@@ -44,16 +45,17 @@ from gotrue import User
 from sqlmodel import Session, delete
 from supabase import Client, create_client
 from supabase._async.client import AsyncClient, create_client as create_async_client
+
+from app import crud
 from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
 from app.models.item import Item, ItemCreate
 from app.schemas.auth import Token
 
-from app import crud
-
 # Configuration de Faker
 fake = Faker()
+
 
 @pytest.fixture(scope="module")
 def db() -> Generator[Session, None]:
@@ -91,10 +93,7 @@ def super_client() -> Generator[Client, None]:
 @pytest.fixture(scope="session")
 def supabase():
     """Client Supabase de base avec la clé anon"""
-    return create_client(
-        settings.SUPABASE_URL,
-        settings.SUPABASE_KEY
-    )
+    return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 
 @pytest.fixture(scope="session")
@@ -104,19 +103,23 @@ def superuser_auth() -> dict:
 
     # Essayer de se connecter avec le superuser
     try:
-        auth_response = supabase_client.auth.sign_in_with_password({
-            "email": settings.FIRST_SUPERUSER,
-            "password": settings.FIRST_SUPERUSER_PASSWORD
-        })
+        auth_response = supabase_client.auth.sign_in_with_password(
+            {
+                "email": settings.FIRST_SUPERUSER,
+                "password": settings.FIRST_SUPERUSER_PASSWORD,
+            }
+        )
         token = auth_response.session.access_token
     except Exception as e:
         print(f"Erreur lors de la connexion avec le superuser: {e}")
         # Essayer de créer le superuser s'il n'existe pas
         try:
-            auth_response = supabase_client.auth.sign_up({
-                "email": settings.FIRST_SUPERUSER,
-                "password": settings.FIRST_SUPERUSER_PASSWORD
-            })
+            auth_response = supabase_client.auth.sign_up(
+                {
+                    "email": settings.FIRST_SUPERUSER,
+                    "password": settings.FIRST_SUPERUSER_PASSWORD,
+                }
+            )
             token = auth_response.session.access_token
         except Exception as signup_error:
             print(f"Erreur lors de la création du superuser: {signup_error}")
@@ -128,30 +131,33 @@ def superuser_auth() -> dict:
 @pytest.fixture(scope="session")
 async def async_supabase_client() -> AsyncClient:
     """Client Supabase asynchrone pour les tests"""
-    return await create_async_client(
-        settings.SUPABASE_URL,
-        settings.SUPABASE_KEY
-    )
+    return await create_async_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 
 @pytest.fixture(scope="session")
 async def async_superuser_client() -> AsyncClient:
     """Client Supabase asynchrone authentifié en tant que superuser"""
-    client = await create_async_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+    client = await create_async_client(
+        settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY
+    )
 
     # Se connecter avec le superuser
     try:
-        auth_response = await client.auth.sign_in_with_password({
-            "email": settings.FIRST_SUPERUSER,
-            "password": settings.FIRST_SUPERUSER_PASSWORD
-        })
+        auth_response = await client.auth.sign_in_with_password(
+            {
+                "email": settings.FIRST_SUPERUSER,
+                "password": settings.FIRST_SUPERUSER_PASSWORD,
+            }
+        )
     except Exception as e:
         print(f"Erreur lors de la connexion asynchrone avec le superuser: {e}")
         # Tenter de créer le superuser
-        auth_response = await client.auth.sign_up({
-            "email": settings.FIRST_SUPERUSER,
-            "password": settings.FIRST_SUPERUSER_PASSWORD
-        })
+        auth_response = await client.auth.sign_up(
+            {
+                "email": settings.FIRST_SUPERUSER,
+                "password": settings.FIRST_SUPERUSER_PASSWORD,
+            }
+        )
 
     return client
 
@@ -159,10 +165,7 @@ async def async_superuser_client() -> AsyncClient:
 @pytest.fixture
 async def test_user(supabase):
     """Crée un utilisateur de test"""
-    user_data = {
-        "email": fake.email(),
-        "password": fake.password(length=12)
-    }
+    user_data = {"email": fake.email(), "password": fake.password(length=12)}
 
     user = await supabase.auth.sign_up(user_data)
 
@@ -179,24 +182,18 @@ async def test_users(supabase):
     clients = []
 
     for _ in range(2):
-        user_data = {
-            "email": fake.email(),
-            "password": fake.password(length=12)
-        }
+        user_data = {"email": fake.email(), "password": fake.password(length=12)}
         user = await supabase.auth.sign_up(user_data)
         users.append(user)
 
         client = create_client(
             settings.SUPABASE_URL,
             settings.SUPABASE_KEY,
-            headers={"Authorization": f"Bearer {user.session.access_token}"}
+            headers={"Authorization": f"Bearer {user.session.access_token}"},
         )
         clients.append(client)
 
-    yield {
-        "users": users,
-        "clients": clients
-    }
+    yield {"users": users, "clients": clients}
 
     # Cleanup
     for user in users:

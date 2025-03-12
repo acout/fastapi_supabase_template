@@ -2,7 +2,6 @@ from typing import Annotated
 
 from fastapi import Depends
 from sqlmodel import Session
-from supabase._async.client import AsyncClient
 
 from app.core.auth import SuperClient, get_current_user
 from app.core.db import get_db

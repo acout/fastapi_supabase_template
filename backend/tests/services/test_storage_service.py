@@ -1,6 +1,6 @@
 import io
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import HTTPException, UploadFile
@@ -13,9 +13,7 @@ from app.services.storage import StorageService
 
 # Créer un moteur de base de données en mémoire pour les tests
 engine = create_engine(
-    "sqlite://",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+    "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
 )
 
 
@@ -35,12 +33,14 @@ def mock_supabase_client():
     # Configurer le mock pour storage.from_().upload()
     storage_from = AsyncMock()
     storage_from.upload.return_value = {"Key": "test/path/test.txt"}
-    storage_from.create_signed_url.return_value = "https://example.com/test.txt?signature=abc"
+    storage_from.create_signed_url.return_value = (
+        "https://example.com/test.txt?signature=abc"
+    )
     storage_from.download.return_value = b"test content"
     storage_from.remove.return_value = True
     storage_from.list.return_value = [
         {"name": "test1.txt", "id": "123", "metadata": {}},
-        {"name": "test2.txt", "id": "456", "metadata": {}}
+        {"name": "test2.txt", "id": "456", "metadata": {}},
     ]
 
     # Configurer client.storage.from_()
@@ -75,6 +75,7 @@ def mock_upload_file():
 @pytest.mark.asyncio
 async def test_initialize_buckets(storage_service, mock_supabase_client):
     """Test d'initialisation des buckets"""
+
     # Buckets à initialiser
     class TestBucket1:
         name = "existing-bucket"
@@ -112,7 +113,7 @@ async def test_upload_file(storage_service, mock_supabase_client, mock_upload_fi
         user_id=user_id,
         record_id=record_id,
         description=description,
-        session=db
+        session=db,
     )
 
     # Vérifier que from_ et upload ont été appelés
@@ -145,7 +146,7 @@ async def test_upload_file_invalid_type(storage_service, mock_supabase_client):
         await storage_service.upload_file(
             bucket_class=ProfilePictures,  # N'accepte que les images
             file=file,
-            user_id=uuid.uuid4()
+            user_id=uuid.uuid4(),
         )
 
     # Vérifier l'exception
@@ -166,9 +167,7 @@ async def test_upload_file_too_large(storage_service, mock_supabase_client):
     # Essayer d'uploader
     with pytest.raises(HTTPException) as exc_info:
         await storage_service.upload_file(
-            bucket_class=ProfilePictures,
-            file=file,
-            user_id=uuid.uuid4()
+            bucket_class=ProfilePictures, file=file, user_id=uuid.uuid4()
         )
 
     # Vérifier l'exception
@@ -209,7 +208,9 @@ async def test_download_file(storage_service, mock_supabase_client):
 
     # Vérifier l'appel
     mock_supabase_client.storage.from_.assert_called_with(bucket_name)
-    mock_supabase_client.storage.from_.return_value.download.assert_called_with(file_path)
+    mock_supabase_client.storage.from_.return_value.download.assert_called_with(
+        file_path
+    )
 
     # Vérifier la valeur de retour
     assert isinstance(result, io.BytesIO)
@@ -232,17 +233,14 @@ async def test_delete_file(storage_service, mock_supabase_client, db):
         content_type="text/plain",
         size=100,
         bucket_name=bucket_name,
-        path=file_path
+        path=file_path,
     )
     db.add(file_meta)
     db.commit()
 
     # Supprimer le fichier
     result = await storage_service.delete_file(
-        bucket_name=bucket_name,
-        file_path=file_path,
-        session=db,
-        metadata_id=file_id
+        bucket_name=bucket_name, file_path=file_path, session=db, metadata_id=file_id
     )
 
     # Vérifier l'appel
