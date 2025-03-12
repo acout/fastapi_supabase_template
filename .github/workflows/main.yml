@@ -32,10 +32,42 @@ jobs:
       - name: Run pre-commit checks
         run: pre-commit run --all-files
 
+  # Création de l'image Docker
+  build:
+    name: Build Docker Image
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if Dockerfile exists
+        id: check_dockerfile
+        run: |
+          if [ -f "Dockerfile" ]; then
+            echo "dockerfile_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "dockerfile_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Docker image for testing
+        if: steps.check_dockerfile.outputs.dockerfile_exists == 'true'
+        run: |
+          docker build -t fastapi-supabase-template:test .
+          # Sauvegarder l'image pour les jobs suivants
+          docker save fastapi-supabase-template:test > /tmp/docker-image.tar
+
+      - name: Upload Docker image as artifact
+        if: steps.check_dockerfile.outputs.dockerfile_exists == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: /tmp/docker-image.tar
+          retention-days: 1
+
   # Tests et couverture de code
   test:
     name: Test Coverage
-    needs: quality
+    needs: build
     runs-on: ubuntu-latest
     env:
       PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
@@ -49,19 +81,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install brew
-        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
       - name: Create .env.test file
         run: |
           echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" > .env.test
@@ -73,24 +92,20 @@ jobs:
           echo "FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER }}" >> .env.test
           echo "FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD }}" >> .env.test
 
-      - name: Install Supabase
-        run: |
-          echo >> /home/runner/.bashrc
-          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/runner/.bashrc
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          HOMEBREW_NO_INSTALL_CLEANUP=1
-          brew install supabase/tap/supabase
-          bash scripts/update-env.sh
-          cd backend
-          uv sync --all-extras --dev
-          uv run bash scripts/pre-start.sh
-          uv run bash scripts/tests-start.sh
+      - name: Download Docker image
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-image
+          path: /tmp
 
-      - name: Run tests with coverage
+      - name: Load Docker image
+        run: docker load < /tmp/docker-image.tar
+
+      - name: Run tests with coverage in Docker
         run: |
-          cd backend
-          uv pip install pytest pytest-cov
-          uv run python -m pytest --cov=app --cov-report=xml
+          docker run --env-file .env.test -v $(pwd)/backend:/app/backend fastapi-supabase-template:test bash -c "cd /app/backend && python -m pytest --cov=app --cov-report=xml"
+          # Copier les résultats de couverture depuis le conteneur
+          docker cp $(docker ps -lq):/app/backend/coverage.xml ./backend/coverage.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -106,48 +121,47 @@ jobs:
     if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
-        os: [ubuntu-latest]
         python-version: ["3.11", "3.13"]  # 3.12 est déjà testé dans le job test
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-
-      - name: Install brew
-        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-      # Similaire au job test mais sans upload de couverture
-      # [...]
-
-  # Construction de l'image Docker
-  build:
-    name: Build Docker Image
-    needs: test
     runs-on: ubuntu-latest
+    env:
+      PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      POSTGRES_SERVER: ${{ secrets.POSTGRES_SERVER }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
+      FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check if Dockerfile exists
-        id: check_dockerfile
+      - name: Create .env.test file
         run: |
-          if [ -f "Dockerfile" ]; then
-            echo "dockerfile_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "dockerfile_exists=false" >> $GITHUB_OUTPUT
-          fi
+          echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" > .env.test
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env.test
+          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env.test
+          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env.test
+          echo "POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}" >> .env.test
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env.test
+          echo "FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER }}" >> .env.test
+          echo "FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD }}" >> .env.test
 
-      - name: Build Docker image
-        if: steps.check_dockerfile.outputs.dockerfile_exists == 'true'
-        run: docker build -t fastapi-supabase-template:${{ github.sha }} .
+      # Créer une image Docker modifiée pour la version Python spécifique
+      - name: Build Docker image for Python ${{ matrix.python-version }}
+        run: |
+          # Créer un Dockerfile temporaire qui utilise la version Python spécifique
+          echo "FROM python:${{ matrix.python-version }}-slim" > Dockerfile.test
+          cat Dockerfile | grep -v "^FROM" >> Dockerfile.test
+          docker build -f Dockerfile.test -t fastapi-test:${{ matrix.python-version }} .
+
+      - name: Run tests in Docker
+        run: |
+          docker run --env-file .env.test -v $(pwd)/backend:/app/backend fastapi-test:${{ matrix.python-version }} bash -c "cd /app/backend && python -m pytest"
 
   # Déploiement (uniquement pour les tags de version)
   release:
     name: Bump Version and Release
-    needs: [test, build]
+    needs: [test, matrix-test]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
