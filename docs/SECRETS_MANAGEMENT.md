@@ -27,23 +27,46 @@ FIRST_SUPERUSER_PASSWORD=...
 
 ## Déploiement des secrets vers GitHub
 
-Pour synchroniser les secrets de votre fichier `.env.test` vers GitHub Actions :
+Plusieurs méthodes sont disponibles pour déployer vos secrets vers GitHub :
 
-### 1. Prérequis
+### Méthode 1 : Utiliser le script shell (Dans le devcontainer)
+
+Le moyen le plus simple avec le devcontainer :
 
 ```bash
-pip install PyGithub python-dotenv
+make deploy-secrets
 ```
 
-### 2. Exécuter le script de déploiement
+ou
 
 ```bash
+./.devcontainer/deploy-secrets.sh
+```
+
+Ce script utilise GitHub CLI pour s'authentifier et déployer les secrets.
+
+### Méthode 2 : Utiliser directement le script Python
+
+```bash
+# Installation des dépendances
+pip install PyGithub python-dotenv
+
+# Exportez votre token GitHub (ou le script vous le demandera)
+export GITHUB_TOKEN=votre_token_github
+
+# Exécution du script
 python scripts/deploy_env_secrets.py
 ```
 
 Le script vous demandera un token GitHub avec les permissions `repo` si la variable d'environnement `GITHUB_TOKEN` n'est pas définie.
 
-### 3. Vérification
+### Méthode 3 : Manuellement via l'interface GitHub
+
+1. Allez sur GitHub → votre dépôt → Settings → Secrets and variables → Actions
+2. Cliquez sur "New repository secret"
+3. Ajoutez chaque variable avec le suffixe `_TEST` (ex: `SUPABASE_URL_TEST`)
+
+## Vérification
 
 Après exécution, vérifiez les secrets dans votre dépôt GitHub :
 
