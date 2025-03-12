@@ -3,20 +3,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Charger .env.test AVANT tout autre import
-test_env_path = Path(__file__).parent.parent.parent / ".env.test"
-if not test_env_path.exists():
-    # Si .env.test n'existe pas, essayer de charger .env standard
-    test_env_path = Path(__file__).parent.parent.parent / ".env"
-    if not test_env_path.exists():
-        raise FileNotFoundError(
-            f"Neither .env.test nor .env file found at {test_env_path.parent}. "
-            "Please create one with the required environment variables."
-        )
-
-print(f"Loading test environment from: {test_env_path}")
-load_dotenv(test_env_path)
-
 # Vérifier les variables requises
 required_vars = [
     "PROJECT_NAME",
@@ -28,10 +14,27 @@ required_vars = [
     "FIRST_SUPERUSER_PASSWORD",
 ]
 
+# Vérifier si toutes les variables sont déjà définies dans l'environnement
+all_vars_present = all(os.getenv(var) for var in required_vars)
+
+if not all_vars_present:
+    # Tenter de charger .env.test d'abord, puis .env si nécessaire
+    test_env_path = Path(__file__).parent.parent.parent / ".env.test"
+    if not test_env_path.exists():
+        test_env_path = Path(__file__).parent.parent.parent / ".env"
+
+    # Charger le fichier s'il existe
+    if test_env_path.exists():
+        print(f"Loading test environment from: {test_env_path}")
+        load_dotenv(test_env_path)
+    else:
+        print("No .env or .env.test file found, using environment variables")
+
+# Vérifier à nouveau les variables après avoir chargé le fichier
 missing_vars = [var for var in required_vars if not os.getenv(var)]
 if missing_vars:
     raise ValueError(
-        f"Missing required environment variables in {test_env_path.name}: {', '.join(missing_vars)}"
+        f"Missing required environment variables: {', '.join(missing_vars)}"
     )
 
 # Maintenant on peut importer le reste

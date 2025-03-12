@@ -15,13 +15,12 @@ Prérequis :
 
 import os
 from pathlib import Path
-import importlib.util
 import dotenv
 from github import Github, GithubException
 
 # Configuration
 ENV_FILE = ".env.test"
-SECRET_SUFFIX = "_TEST"  # Ajouter ce suffixe aux noms des secrets
+SECRET_SUFFIX = ""  # Ajouter ce suffixe aux noms des secrets
 
 
 def load_env_file(env_file):
@@ -109,17 +108,6 @@ def update_secrets(token, owner, repo_name, env_vars):
 def main():
     """Fonction principale du script"""
     print("📝 Déploiement des secrets GitHub depuis le fichier .env.test")
-
-    # Vérifier les prérequis
-    if not importlib.util.find_spec("PyGithub"):
-        print("❌ Le package PyGithub n'est pas installé. Installez-le avec:")
-        print("   pip install PyGithub")
-        return
-
-    if not importlib.util.find_spec("dotenv"):
-        print("❌ Le package python-dotenv n'est pas installé. Installez-le avec:")
-        print("   pip install python-dotenv")
-        return
 
     # Charger les variables d'environnement
     try:
