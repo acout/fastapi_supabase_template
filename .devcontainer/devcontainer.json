@@ -14,18 +14,28 @@
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.organizeImports": true
+        },
+        "terminal.integrated.env.linux": {
+          "PYTHONPATH": "/workspaces/fastapi_supabase_template"
         }
       },
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-python.black-formatter"
+        "ms-python.black-formatter",
+        "github.vscode-github-actions"
       ]
     }
   },
-  "postCreateCommand": "pip install -e ./backend && pip install pre-commit && pre-commit install",
+  "postCreateCommand": "pip install -e ./backend && pip install pre-commit python-dotenv PyGithub && pre-commit install",
   "remoteUser": "vscode",
   "runArgs": [
     "--init"
-  ]
+  ],
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
 }
