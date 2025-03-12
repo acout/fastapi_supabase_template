@@ -23,12 +23,12 @@ function_upgrades = getattr(context, 'function_upgrades', {})
 def upgrade() -> None:
     # Table operations
     ${upgrades if upgrades else "pass"}
-    
+
     # RLS Policies
     % if policy_upgrades:
     % for table_name, policies in policy_upgrades.items():
     % if policies:
-    
+
     # Policies for ${table_name}
     op.execute("ALTER TABLE ${table_name} ENABLE ROW LEVEL SECURITY;")
     % for policy in policies:
@@ -43,12 +43,12 @@ def upgrade() -> None:
     % endif
     % endfor
     % endif
-    
+
     # PostgreSQL Functions
     % if function_upgrades:
     % for table_name, functions in function_upgrades.items():
     % if functions:
-    
+
     # Functions for ${table_name}
     % for func in functions:
     op.execute("""
@@ -75,7 +75,7 @@ def downgrade() -> None:
     % endif
     % endfor
     % endif
-    
+
     # Drop functions
     % if function_upgrades:
     % for table_name, functions in function_upgrades.items():
@@ -86,6 +86,6 @@ def downgrade() -> None:
     % endif
     % endfor
     % endif
-    
+
     # Table operations
-    ${downgrades if downgrades else "pass"} 
+    ${downgrades if downgrades else "pass"}

@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "astral-sh.ruff-vscode",
+    "matangover.mypy",
+    "charliermarsh.pytest",
+    "njpwerner.autodocstring"
+  ]
+}

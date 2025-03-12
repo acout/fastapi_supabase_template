@@ -1,7 +1,7 @@
 """policies
 
 Revision ID: 70657e5a9e34
-Revises: 
+Revises:
 Create Date: 2025-03-07 22:08:46.832833
 
 """

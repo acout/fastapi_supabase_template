@@ -12,6 +12,7 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 - **API RESTful** complète avec FastAPI
 - **Documentation automatique** avec Swagger UI
 - **Tests unitaires** complets
+- **Qualité de code** avec hooks pre-commit, linting et formattage automatique
 
 ## Structure du projet
 
@@ -26,10 +27,59 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 │   └── utils            # Utilitaires
 ├── tests                # Tests unitaires et d'intégration
 ├── alembic              # Migrations de base de données
+├── docs                 # Documentation du projet et standards de code
 └── supabase             # Configuration Supabase
 ```
 
-## Environnement
+## Environnement de développement
+
+### Prérequis
+
+- Python 3.12+
+- [uv](https://github.com/astral-sh/uv) pour la gestion des dépendances
+- [pre-commit](https://pre-commit.com/) pour les hooks de pré-commit
+- [Supabase CLI](https://supabase.com/docs/guides/cli) pour le développement local
+
+### Installation rapide
+
+Utilisez nos scripts d'installation automatique pour configurer rapidement l'environnement de développement :
+
+**Linux/MacOS** :
+```bash
+# Cloner le repository
+git clone https://github.com/acout/fastapi_supabase_template.git
+cd fastapi_supabase_template
+
+# Exécuter le script d'installation
+chmod +x scripts/setup-dev-environment.sh
+./scripts/setup-dev-environment.sh
+```
+
+**Windows** :
+```powershell
+# Cloner le repository
+git clone https://github.com/acout/fastapi_supabase_template.git
+cd fastapi_supabase_template
+
+# Exécuter le script d'installation (PowerShell)
+.\scripts\setup-dev-environment.ps1
+```
+
+### Installation manuelle
+
+```bash
+# Cloner le repository
+git clone https://github.com/acout/fastapi_supabase_template.git
+cd fastapi_supabase_template
+
+# Installer pre-commit
+pip install pre-commit
+pre-commit install
+
+# Installer les dépendances avec uv
+cd backend
+uv sync --all-groups --dev
+```
 
 ### Python
 
@@ -62,6 +112,59 @@ supabase start
 >bash scripts/update-env.sh
 >```
 > Modifiez le fichier `.env` à partir de la sortie de `supabase start` ou exécutez `supabase status` manuellement.
+
+## Processus de développement
+
+### Workflow de développement
+
+1. **Créer une branche**: Pour chaque tâche, créez une branche dédiée à partir de `main`.
+   ```bash
+   git checkout -b feature/description-de-la-fonctionnalite
+   ```
+
+2. **Développer et tester**: Implémentez vos modifications avec les tests appropriés.
+
+3. **Valider localement**:
+   ```bash
+   # Vérifier la qualité du code
+   pre-commit run --all-files
+
+   # Exécuter les tests
+   cd backend
+   pytest
+
+   # Vérifier la couverture de tests sur vos changements
+   ../scripts/check_test_coverage.sh
+   ```
+
+4. **Soumettre les modifications**:
+   ```bash
+   git add .
+   git commit -m "[TICKET-ID] Description du changement"
+   git push origin feature/description-de-la-fonctionnalite
+   ```
+
+5. **Créer une Pull Request**: Via GitHub, créez une PR de votre branche vers `main`.
+
+### Standards de codage
+
+Voir [CODING_STANDARDS.md](docs/CODING_STANDARDS.md) pour les standards de codage détaillés.
+
+En résumé:
+- Nous utilisons **Ruff** pour le linting et le formatage
+- **pre-commit** pour automatiser les vérifications avant chaque commit
+- Une couverture de tests minimale de **80%** est requise
+- Les docstrings au format Google sont utilisées pour documenter le code
+
+### Outils configurés
+
+- **Ruff**: Linting et formattage
+- **mypy**: Vérification de types
+- **pytest**: Tests unitaires et d'intégration
+- **pre-commit**: Hooks de pré-commit pour automatiser les vérifications
+- **GitHub Actions**: CI/CD pour exécuter les tests et vérifier la qualité du code
+
+Pour plus de détails sur le processus de contribution, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Utilisation de l'API de stockage
 

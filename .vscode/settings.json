@@ -1,0 +1,30 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "python.analysis.typeCheckingMode": "basic",
+  "[python]": {
+    "editor.defaultFormatter": "astral-sh.ruff-vscode",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false
+  },
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.nosetestsEnabled": false,
+  "python.linting.enabled": true,
+  "ruff.enable": true,
+  "ruff.format.args": [
+    "--select",
+    "I"
+  ],
+  "python.analysis.autoImportCompletions": true,
+  "autoDocstring.docstringFormat": "google",
+  "workbench.colorCustomizations": {
+    "statusBar.background": "#005f5f",
+    "statusBar.noFolderBackground": "#005f5f",
+    "statusBar.debuggingBackground": "#005f5f",
+    "activityBar.background": "#004444"
+  }
+}

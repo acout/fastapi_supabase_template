@@ -6,7 +6,7 @@ import subprocess
 
 def generate_migration(message: str):
     # Setup environnement
-    env_path = os.path.join(os.getcwd(), '.env')
+    env_path = os.path.join(os.getcwd(), ".env")
     load_dotenv(env_path)
 
     # Assurer que le dossier versions existe
@@ -19,7 +19,7 @@ def generate_migration(message: str):
         "POSTGRES_PORT": os.getenv("POSTGRES_PORT"),
         "POSTGRES_DB": os.getenv("POSTGRES_DB"),
         "POSTGRES_USER": os.getenv("POSTGRES_USER"),
-        "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD")
+        "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD"),
     }
 
     # Se placer dans le bon dossier

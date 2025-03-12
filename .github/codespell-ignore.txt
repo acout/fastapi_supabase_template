@@ -1,0 +1,15 @@
+# French words that should be ignored by codespell
+classe
+classes
+explicite
+mis
+branche
+groupe
+groupes
+Branche
+Processus
+processus
+reste
+Mis
+Classe
+groupes

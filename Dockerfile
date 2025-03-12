@@ -1,5 +1,5 @@
 # Ref: https://github.com/fastapi/full-stack-fastapi-template/blob/master/backend/Dockerfile
-FROM python:3.12-slim-bookworm
+FROM mcr.microsoft.com/devcontainers/python:1-3.12-bullseye
 
 # Print logs immediately
 # Ref: https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUNBUFFERED
@@ -17,25 +17,22 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        libpq-dev \
-        gcc \
-        sudo \
-        git \
-        curl \
-        ca-certificates \
-        wget \
+    libpq-dev \
+    gcc \
+    sudo \
+    git \
+    curl \
+    ca-certificates \
+    wget \
+    gpg \
     && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg;
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null;
+RUN apt update && apt install -y gh;
 
 # Set working directory
 WORKDIR /app
-
-# Créer l'utilisateur seulement si USERNAME est défini et si BUILD_ENV=dev
-RUN if [ -n "$USERNAME" ] && [ "$BUILD_ENV" = "dev" ]; then \
-    groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME; \
-    fi
 
 # Install UV
 COPY --from=ghcr.io/astral-sh/uv:0.6.4 /uv /uvx /bin/
@@ -74,6 +71,10 @@ RUN --mount=type=cache,target=$UV_CACHE_DIR \
     echo "=== Site packages contents ===" && \
     ls -la /usr/local/lib/python3.12/site-packages/
 
+RUN if [ "$BUILD_ENV" = "test" ]; then \
+    uv pip install --system -e ".[test]"; \
+    fi
+
 # Verify installations with more debug
 RUN set -x && \
     python -c "import sqlmodel; print(f'SQLModel version: {sqlmodel.__version__}')" && \
@@ -96,4 +97,3 @@ WORKDIR /app
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
 # If running behind a proxy like Nginx or Traefik add --proxy-headers
 # CMD ["fastapi", "run", "app/main.py", "--port", "80", "--proxy-headers"]
-

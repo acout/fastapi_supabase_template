@@ -1,10 +1,12 @@
 import asyncio
-from supabase import create_client
 import os
+import uuid
+
 from dotenv import load_dotenv
 from faker import Faker
+from supabase import create_client
+
 from app.core.config import settings
-import uuid
 
 # Charger les variables d'environnement de test
 load_dotenv(".env.test")
@@ -104,9 +106,9 @@ async def test_rls_policies():
             client1.table("profiles").update({"name": "Hacked!"}).eq(
                 "owner_id", user2.user.id
             ).execute()
-            assert (
-                False
-            ), "La mise à jour du profil d'un autre utilisateur devrait échouer"
+            assert False, (
+                "La mise à jour du profil d'un autre utilisateur devrait échouer"
+            )
         except Exception as e:
             print("Erreur attendue:", e)
 
@@ -114,9 +116,9 @@ async def test_rls_policies():
         # User2 essaie de supprimer le profil de User1 (devrait échouer)
         try:
             client2.table("profiles").delete().eq("owner_id", user1.user.id).execute()
-            assert (
-                False
-            ), "La suppression du profil d'un autre utilisateur devrait échouer"
+            assert False, (
+                "La suppression du profil d'un autre utilisateur devrait échouer"
+            )
         except Exception as e:
             print("Erreur attendue:", e)
 
@@ -157,9 +159,9 @@ async def test_rls_policies():
         # User2 essaie d'accéder au fichier de User1 (devrait échouer)
         try:
             client2.storage.from_(bucket_name).download(path1)
-            assert (
-                False
-            ), "Le téléchargement du fichier d'un autre utilisateur devrait échouer"
+            assert False, (
+                "Le téléchargement du fichier d'un autre utilisateur devrait échouer"
+            )
         except Exception as e:
             print("Erreur attendue:", e)
 

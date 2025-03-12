@@ -49,10 +49,10 @@ def get_url():
     port = os.getenv("POSTGRES_PORT", "5432")
     db = os.getenv("POSTGRES_DB", "postgres")
     user = os.getenv("POSTGRES_USER", "postgres")
-    
+
     # Construction du username spécial pour le pooler
     pooler_user = f"{user}.{project_id}" if project_id else user
-    
+
     return f"postgresql://{pooler_user}:{password}@{server}:{port}/{db}"
 
 
@@ -66,18 +66,18 @@ def include_object(object, name, type_, reflected, compare_to):
 def process_revision_directives(context, revision, directives):
     """Ajoute les directives RLS directement dans les opérations"""
     logger.debug("Processing revision directives...")
-    
+
     if not directives or not directives[0].upgrade_ops:
         logger.debug("No upgrade ops found!")
         return
-        
+
     script = directives[0]
-    
+
     if not script.upgrade_ops:
         script.upgrade_ops = ops.UpgradeOps([])
     if not script.downgrade_ops:
         script.downgrade_ops = ops.DowngradeOps([])
-    
+
     # 1. Traitement des tables à créer
     created_tables = []
     for op in script.upgrade_ops.ops:
@@ -92,21 +92,21 @@ def process_revision_directives(context, revision, directives):
         # Trouver le modèle correspondant
         model = None
         for m in [Item, Profile]:  # Ajoutez tous vos modèles ici
-            if (hasattr(m, '__tablename__') and 
-                getattr(m, '__tablename__', None) == table_name and 
-                issubclass(m, RLSModel) and 
+            if (hasattr(m, '__tablename__') and
+                getattr(m, '__tablename__', None) == table_name and
+                issubclass(m, RLSModel) and
                 getattr(m, '__rls_enabled__', False)):
                 model = m
                 break
-        
+
         if model:
             logger.debug(f"Adding RLS for {table_name} from model {model.__name__}")
-            
+
             # Enable RLS
             script.upgrade_ops.ops.append(
                 ops.ExecuteSQLOp(f"ALTER TABLE {table_name} ENABLE ROW LEVEL SECURITY;")
             )
-            
+
             # Add policies
             for operation, policy in model.get_policies().items():
                 sql = f"""
@@ -118,28 +118,28 @@ def process_revision_directives(context, revision, directives):
                 if policy.check:
                     sql += f"\n    WITH CHECK ({policy.check})"
                 sql += ";"
-                
+
                 script.upgrade_ops.ops.append(ops.ExecuteSQLOp(sql))
                 logger.debug(f"Added {operation} policy for {table_name}")
-            
+
             # Add downgrade operations at the beginning
             # Drop policies first
             for operation in model.get_policies().keys():
-                script.downgrade_ops.ops.insert(0, 
+                script.downgrade_ops.ops.insert(0,
                     ops.ExecuteSQLOp(
                         f'DROP POLICY IF EXISTS "{table_name}_{operation}" ON {table_name};'
                     )
                 )
-            
+
             # Then disable RLS
             script.downgrade_ops.ops.insert(0,
                 ops.ExecuteSQLOp(f"ALTER TABLE {table_name} DISABLE ROW LEVEL SECURITY;")
             )
-    
+
     # 2. Traitement des buckets Storage
     for bucket_class in STORAGE_BUCKETS:  # Utilisez votre liste de buckets
         logger.debug(f"Processing storage bucket: {bucket_class.name}")
-        
+
         # Create bucket
         script.upgrade_ops.ops.append(
             ops.ExecuteSQLOp(f"""
@@ -153,14 +153,14 @@ def process_revision_directives(context, revision, directives):
                 SET public = EXCLUDED.public;
             """)
         )
-        
+
         # Enable RLS on storage.objects
         script.upgrade_ops.ops.append(
             ops.ExecuteSQLOp(
                 "ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;"
             )
         )
-        
+
         # Add bucket policies
         for policy in bucket_class.get_policies():
             sql = f"""
@@ -172,7 +172,7 @@ def process_revision_directives(context, revision, directives):
             """
             script.upgrade_ops.ops.append(ops.ExecuteSQLOp(sql))
             logger.debug(f"Added {policy.operation.value} policy for bucket {bucket_class.name}")
-        
+
         # Add downgrade operations
         for policy in bucket_class.get_policies():
             script.downgrade_ops.ops.insert(0,
@@ -180,7 +180,7 @@ def process_revision_directives(context, revision, directives):
                     f'DROP POLICY IF EXISTS "{policy.name}" ON storage.objects;'
                 )
             )
-        
+
         script.downgrade_ops.ops.append(
             ops.ExecuteSQLOp(
                 f"DELETE FROM storage.buckets WHERE id = '{bucket_class.name}';"
