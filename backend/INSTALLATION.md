@@ -27,7 +27,12 @@ cp .env.example .env
 # Éditez le fichier .env avec vos paramètres
 ```
 
-Pour les tests, créez un fichier `.env.test` adapté à votre environnement de test.
+Pour les tests, créez un fichier `.env.test` adapté à votre environnement de test ou copiez simplement le fichier `.env`:
+
+```bash
+cp .env .env.test
+# Modifiez si nécessaire pour votre environnement de test
+```
 
 ## Lancement
 
@@ -46,11 +51,20 @@ docker-compose up -d
 
 ## Tests
 
-### Tests avec Supabase Cloud
+### Tests avec l'instance Supabase cloud
 
 ```bash
 cd backend
 bash scripts/cloud-test.sh
+```
+
+### Tests avec mocks Supabase
+
+Pour exécuter les tests avec des mocks Supabase (sans connexion réelle à Supabase):
+
+```bash
+cd backend
+MOCK_SUPABASE=true SKIP_DB_CHECK=true SKIP_ENV_CHECK=true pytest
 ```
 
 ## Structure du projet
@@ -76,4 +90,36 @@ La structure du projet est organisée comme suit:
 ├── Dockerfile         # Configuration Docker
 ├── docker-compose.yml # Configuration docker-compose
 └── README.md          # Documentation principale
+```
+
+## Variables d'environnement de test
+
+Le projet supporte les variables d'environnement suivantes pour faciliter les tests:
+
+- `MOCK_SUPABASE=true` : Remplace le client Supabase par un mock pour les tests sans connexion
+- `SKIP_DB_CHECK=true` : Ignore les vérifications de connexion à la base de données
+- `SKIP_ENV_CHECK=true` : Ignore les vérifications des variables d'environnement requises
+
+Ces variables peuvent être utilisées ensemble pour les tests d'intégration sans dépendances externes.
+
+## Intégration Supabase
+
+Le projet utilise Supabase pour:
+
+1. **Authentification** - via Supabase Auth
+2. **Base de données** - via PostgreSQL hosté sur Supabase
+3. **Stockage** - via les buckets Supabase Storage
+
+Pour configurer l'accès à votre projet Supabase, modifiez les variables suivantes dans le fichier `.env`:
+
+```
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsIn...
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsIn...
+
+# PostgreSQL connection
+POSTGRES_SERVER=your-project-db.supabase.co
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-db-password
+POSTGRES_DB=postgres
 ```
