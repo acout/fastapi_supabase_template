@@ -1,5 +1,0 @@
-# Ce dossier a été supprimé dans la refactorisation
-# Le support Supabase local a été abandonné pour simplifier l'architecture
-# Ce fichier .gitignore est là pour indiquer que ce dossier doit être supprimé
-*
-!.gitignore
