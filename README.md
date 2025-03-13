@@ -11,12 +11,11 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 - **Upload de fichiers** avec métadonnées en base de données
 - **API RESTful** complète avec FastAPI
 - **Documentation automatique** avec Swagger UI
-- **Tests unitaires** complets avec support de mocks
+- **Tests** avec support de mocks Supabase pour développer sans dépendances externes
 
 ## Structure du projet
 
 ```
-├── .github/           # GitHub Actions et configurations
 ├── backend/           # Tout le code du projet
 │   ├── alembic/       # Migrations de base de données
 │   ├── app/           # Code source principal
@@ -30,7 +29,6 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 │   │   └── main.py    # Point d'entrée de l'application
 │   ├── scripts/       # Scripts utilitaires
 │   ├── tests/         # Tests
-│   ├── .env.test      # Environnement de test
 │   └── pyproject.toml # Configuration du projet
 ├── .pre-commit-config.yaml   # Hooks pre-commit
 ├── Dockerfile         # Configuration Docker
@@ -38,20 +36,27 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 └── README.md          # Documentation principale
 ```
 
-## Environnement
-
-### Python
-
-> [uv](https://github.com/astral-sh/uv) est un gestionnaire de paquets Python ultra-rapide, écrit en Rust.
+## Installation rapide
 
 ```bash
+# Cloner le dépôt
+git clone https://github.com/acout/fastapi_supabase_template.git
+cd fastapi_supabase_template
+
+# Installer les dépendances
 cd backend
 uv sync --all-groups --dev
+
+# Configurer l'environnement
+cp .env.example .env
+# Éditer .env avec vos paramètres Supabase
 ```
+
+Pour plus de détails, consultez [le guide d'installation](backend/INSTALLATION.md).
 
 ## Utilisation de l'API de stockage
 
-L'API de stockage permet de gérer des fichiers avec Supabase Storage. Voici les principales fonctionnalités :
+L'API de stockage permet de gérer des fichiers avec Supabase Storage.
 
 ### Upload de fichiers
 
@@ -91,53 +96,46 @@ curl -X GET "http://localhost:8000/api/v1/storage/file/FILE_ID/url" \
 
 ## Tests
 
-### Tests avec mocks (sans connexion externe)
-
-```bash
-cd backend
-# Exécuter les tests unitaires avec des mocks
-MOCK_SUPABASE=true SKIP_DB_CHECK=true SKIP_ENV_CHECK=true python -m pytest tests/
-```
-
 ### Tests avec Supabase Cloud
 
-Pour tester avec votre instance Supabase cloud, assurez-vous d'avoir configuré votre fichier `.env` avec les informations de connexion à votre Supabase cloud, puis exécutez :
+```bash
+cd backend
+bash scripts/cloud-test.sh
+```
+
+### Tests avec mocks Supabase
 
 ```bash
 cd backend
-# Exécuter les tests avec l'instance Supabase cloud
-bash scripts/cloud-test.sh
+MOCK_SUPABASE=true SKIP_DB_CHECK=true SKIP_ENV_CHECK=true pytest
 ```
 
 ## Lancement de l'application
 
-### Localement (Python)
+### Démarrage local
 
 ```bash
 cd backend
-python -m app.main
+uvicorn app.main:app --reload
 ```
 
-### Avec Docker Compose
+### Démarrage avec Docker
 
 ```bash
 docker-compose up -d
 ```
 
-L'application est ensuite accessible à l'adresse http://localhost:8000 et la documentation Swagger à http://localhost:8000/docs
+L'application est accessible à l'adresse http://localhost:8000 et la documentation Swagger à http://localhost:8000/docs
 
 ## Docker
 
-> [!note]
-> `acout/fastapi_supabase_template` est le nom de votre image Docker, remplacez-le par le vôtre
-
-Construction de l'image
+Construction de l'image :
 
 ```bash
 docker build -t acout/fastapi_supabase_template .
 ```
 
-Test de l'image
+Exécution de l'image :
 
 ```bash
 docker run --network host \
