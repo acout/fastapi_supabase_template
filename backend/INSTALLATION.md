@@ -58,15 +58,6 @@ cd backend
 bash scripts/cloud-test.sh
 ```
 
-### Tests avec mocks Supabase
-
-Pour exécuter les tests avec des mocks Supabase (sans connexion réelle à Supabase):
-
-```bash
-cd backend
-MOCK_SUPABASE=true SKIP_DB_CHECK=true SKIP_ENV_CHECK=true pytest
-```
-
 ## Structure du projet
 
 La structure du projet est organisée comme suit:
@@ -91,16 +82,6 @@ La structure du projet est organisée comme suit:
 ├── docker-compose.yml # Configuration docker-compose
 └── README.md          # Documentation principale
 ```
-
-## Variables d'environnement de test
-
-Le projet supporte les variables d'environnement suivantes pour faciliter les tests:
-
-- `MOCK_SUPABASE=true` : Remplace le client Supabase par un mock pour les tests sans connexion
-- `SKIP_DB_CHECK=true` : Ignore les vérifications de connexion à la base de données
-- `SKIP_ENV_CHECK=true` : Ignore les vérifications des variables d'environnement requises
-
-Ces variables peuvent être utilisées ensemble pour les tests d'intégration sans dépendances externes.
 
 ## Intégration Supabase
 
