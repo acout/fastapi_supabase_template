@@ -23,6 +23,9 @@ MANIFEST
 
 # Environnement virtuel
 .env
+.env.test
+.env.production
+.env.staging
 .venv
 env/
 venv/
