@@ -23,6 +23,10 @@ class MockSupabaseClient:
         # Simulation de l'authentification
         self.auth = MagicMock()
         self.auth.sign_in.return_value = {"user": {"id": "mock-user-id"}, "session": {"access_token": "mock-token"}}
+        self.auth.sign_in_with_password.return_value = MagicMock(user=MagicMock(id="mock-user-id"),
+                                                         session=MagicMock(access_token="mock-token")) 
+        self.auth.sign_up.return_value = MagicMock(user=MagicMock(id="mock-user-id", email="mock@example.com"),
+                                            session=MagicMock(access_token="mock-token"))
         
         # Simulation des fonctions stockées
         self.functions = MagicMock()
@@ -41,6 +45,10 @@ class MockSupabaseClient:
     def from_(self, bucket_name):
         """Simuler l'accès à un bucket de stockage."""
         return self.storage
+        
+    def table(self, table_name):
+        """Simuler l'accès à une table."""
+        return self.table
 
 
 def should_skip_db_check():
