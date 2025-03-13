@@ -11,7 +11,7 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 - **Upload de fichiers** avec métadonnées en base de données
 - **API RESTful** complète avec FastAPI
 - **Documentation automatique** avec Swagger UI
-- **Tests** avec support de mocks Supabase pour développer sans dépendances externes
+- **Tests** avec l'instance Supabase cloud
 
 ## Structure du projet
 
@@ -101,13 +101,6 @@ curl -X GET "http://localhost:8000/api/v1/storage/file/FILE_ID/url" \
 ```bash
 cd backend
 bash scripts/cloud-test.sh
-```
-
-### Tests avec mocks Supabase
-
-```bash
-cd backend
-MOCK_SUPABASE=true SKIP_DB_CHECK=true SKIP_ENV_CHECK=true pytest
 ```
 
 ## Lancement de l'application
