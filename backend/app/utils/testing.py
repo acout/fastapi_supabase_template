@@ -1,6 +1,4 @@
-"""
-Utilitaires pour les tests avec ou sans dépendances externes.
-"""
+# Utilitaires pour les tests avec ou sans dépendances externes.
 import os
 from unittest.mock import MagicMock
 

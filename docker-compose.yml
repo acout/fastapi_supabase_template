@@ -1,22 +1,19 @@
 version: '3.8'
 
 services:
-  # Service FastAPI (utilise le Dockerfile existant)
   api:
     build:
-      context: ./backend
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8000:80"
     env_file:
-      - .env
-    depends_on:
-      - supabase
-    network_mode: "host"  # Pour communiquer facilement avec Supabase
-
-  # Service Supabase (utilise la CLI Supabase existante)
-  supabase:
-    image: supabase/cli:latest
-    command: start
+      - backend/.env
     volumes:
-      - .:/workdir
-    network_mode: "host"  # Pour exposer tous les services Supabase
+      - ./backend:/app/backend
+    environment:
+      - SKIP_DB_CHECK=false
+      - MOCK_SUPABASE=false
+
+  # Le service local Supabase a été supprimé pour simplifier la structure
+  # En cas de besoin, utiliser la CLI Supabase directement (supabase start)
