@@ -27,18 +27,11 @@ required_vars = [
     "FIRST_SUPERUSER_PASSWORD"
 ]
 
-# Vérifier si on est en mode mock
-SKIP_DB_CHECK = os.getenv("SKIP_DB_CHECK", "").lower() in ("true", "1", "yes")
-MOCK_SUPABASE = os.getenv("MOCK_SUPABASE", "").lower() in ("true", "1", "yes")
-SKIP_ENV_CHECK = os.getenv("SKIP_ENV_CHECK", "").lower() in ("true", "1", "yes")
-
-# Ne pas vérifier les variables si SKIP_ENV_CHECK est activé
-if not SKIP_ENV_CHECK:
-    missing_vars = [var for var in required_vars if not os.getenv(var)]
-    if missing_vars:
-        raise ValueError(
-            f"Missing required environment variables in {test_env_path.name}: {', '.join(missing_vars)}"
-        )
+missing_vars = [var for var in required_vars if not os.getenv(var)]
+if missing_vars:
+    raise ValueError(
+        f"Missing required environment variables in {test_env_path.name}: {', '.join(missing_vars)}"
+    )
 
 # Maintenant on peut importer le reste
 import uuid
@@ -49,12 +42,13 @@ from faker import Faker
 from fastapi.testclient import TestClient
 from gotrue import User
 from sqlmodel import Session, delete
+from supabase import Client, create_client
+from supabase._async.client import AsyncClient, create_client as create_async_client
 from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
 from app.models.item import Item, ItemCreate
 from app.schemas.auth import Token
-from app.utils.testing import MockSupabaseClient
 
 from app import crud
 
@@ -80,12 +74,7 @@ def client() -> Generator[TestClient, None, None]:
 @pytest.fixture(scope="session", autouse=True)
 def global_cleanup() -> Generator[None, None]:
     yield
-    # Ne pas effectuer le nettoyage si on est en mode mock
-    if MOCK_SUPABASE:
-        return
-        
     # Nettoyage uniquement des utilisateurs de test, pas du superuser
-    from supabase import create_client
     super_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
     users = super_client.auth.admin.list_users()
     for user in users:
@@ -94,36 +83,23 @@ def global_cleanup() -> Generator[None, None]:
 
 
 @pytest.fixture(scope="function")
-def super_client() -> Generator[None, None]:
-    if MOCK_SUPABASE:
-        mock_client = MockSupabaseClient()
-        yield mock_client
-    else:
-        from supabase import Client, create_client
-        super_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-        yield super_client
+def super_client() -> Generator[Client, None]:
+    super_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    yield super_client
 
 
 @pytest.fixture(scope="session")
 def supabase():
     """Client Supabase de base avec la clé anon"""
-    if MOCK_SUPABASE:
-        return MockSupabaseClient()
-    else:
-        from supabase import create_client
-        return create_client(
-            settings.SUPABASE_URL,
-            settings.SUPABASE_KEY
-        )
+    return create_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_KEY
+    )
 
 
 @pytest.fixture(scope="session")
 def superuser_auth() -> dict:
     """Obtient un jeton d'authentification pour le superuser"""
-    if MOCK_SUPABASE:
-        return {"Authorization": f"Bearer mock-token-for-superuser"}
-        
-    from supabase import create_client
     supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
     
     # Essayer de se connecter avec le superuser
@@ -150,25 +126,17 @@ def superuser_auth() -> dict:
 
 
 @pytest.fixture(scope="session")
-async def async_supabase_client():
+async def async_supabase_client() -> AsyncClient:
     """Client Supabase asynchrone pour les tests"""
-    if MOCK_SUPABASE:
-        return MockSupabaseClient()
-    else:
-        from supabase._async.client import AsyncClient, create_client as create_async_client
-        return await create_async_client(
-            settings.SUPABASE_URL,
-            settings.SUPABASE_KEY
-        )
+    return await create_async_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_KEY
+    )
 
 
 @pytest.fixture(scope="session")
-async def async_superuser_client():
+async def async_superuser_client() -> AsyncClient:
     """Client Supabase asynchrone authentifié en tant que superuser"""
-    if MOCK_SUPABASE:
-        return MockSupabaseClient()
-        
-    from supabase._async.client import AsyncClient, create_client as create_async_client
     client = await create_async_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
     
     # Se connecter avec le superuser
@@ -196,11 +164,6 @@ async def test_user(supabase):
         "password": fake.password(length=12)
     }
     
-    # Si c'est un mock, traiter spécifiquement
-    if MOCK_SUPABASE:
-        user = MockSupabaseClient().auth.sign_up(user_data)
-        return user
-        
     user = await supabase.auth.sign_up(user_data)
     
     yield user
@@ -215,18 +178,6 @@ async def test_users(supabase):
     users = []
     clients = []
     
-    # Si c'est un mock, traiter spécifiquement 
-    if MOCK_SUPABASE:
-        for _ in range(2):
-            mock_client = MockSupabaseClient()
-            user_data = {"email": fake.email(), "password": fake.password(length=12)}
-            user = mock_client.auth.sign_up(user_data)
-            users.append(user)
-            clients.append(mock_client)
-            
-        return {"users": users, "clients": clients}
-    
-    # Traitement normal avec Supabase    
     for _ in range(2):
         user_data = {
             "email": fake.email(),
@@ -235,7 +186,6 @@ async def test_users(supabase):
         user = await supabase.auth.sign_up(user_data)
         users.append(user)
         
-        from supabase import create_client
         client = create_client(
             settings.SUPABASE_URL,
             settings.SUPABASE_KEY,
@@ -262,14 +212,8 @@ def test_item(db: Session, test_user: User) -> Generator[Item, None]:
 
 
 @pytest.fixture(scope="function")
-def token(super_client) -> Generator[Token, None]:
-    if MOCK_SUPABASE:
-        mock_response = MockSupabaseClient().auth.sign_up(
-            {"email": fake.email(), "password": "testpassword123"}
-        )
-        yield Token(access_token="mock-token-for-testing")
-    else:
-        response = super_client.auth.sign_up(
-            {"email": fake.email(), "password": "testpassword123"}
-        )
-        yield Token(access_token=response.session.access_token)
+def token(super_client: Client) -> Generator[Token, None]:
+    response = super_client.auth.sign_up(
+        {"email": fake.email(), "password": "testpassword123"}
+    )
+    yield Token(access_token=response.session.access_token)
