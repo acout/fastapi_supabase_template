@@ -11,22 +11,31 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 - **Upload de fichiers** avec métadonnées en base de données
 - **API RESTful** complète avec FastAPI
 - **Documentation automatique** avec Swagger UI
-- **Tests unitaires** complets
+- **Tests unitaires** complets avec support de mocks
 
 ## Structure du projet
 
 ```
-├── app                  # Application principale
-│   ├── api              # Routes de l'API
-│   ├── core             # Configuration et fonctionnalités de base
-│   ├── crud             # Opérations CRUD pour la base de données
-│   ├── models           # Modèles de données SQLModel
-│   ├── schemas          # Schémas Pydantic
-│   ├── services         # Services d'application
-│   └── utils            # Utilitaires
-├── tests                # Tests unitaires et d'intégration
-├── alembic              # Migrations de base de données
-└── supabase             # Configuration Supabase
+├── .github/           # GitHub Actions et configurations
+├── backend/           # Tout le code du projet
+│   ├── alembic/       # Migrations de base de données
+│   ├── app/           # Code source principal
+│   │   ├── api/       # Endpoints API
+│   │   ├── core/      # Configurations et utilitaires principaux
+│   │   ├── crud/      # Opérations CRUD
+│   │   ├── models/    # Modèles de données
+│   │   ├── schemas/   # Schémas Pydantic
+│   │   ├── services/  # Services métier
+│   │   ├── utils/     # Utilitaires génériques
+│   │   └── main.py    # Point d'entrée de l'application
+│   ├── scripts/       # Scripts utilitaires
+│   ├── tests/         # Tests
+│   ├── .env.test      # Environnement de test
+│   └── pyproject.toml # Configuration du projet
+├── .pre-commit-config.yaml   # Hooks pre-commit
+├── Dockerfile         # Configuration Docker
+├── docker-compose.yml # Configuration docker-compose
+└── README.md          # Documentation principale
 ```
 
 ## Environnement
@@ -39,29 +48,6 @@ Un template de projet FastAPI intégrant Supabase pour l'authentification, la ba
 cd backend
 uv sync --all-groups --dev
 ```
-
-### [Supabase](https://supabase.com/docs/guides/local-development/cli/getting-started?queryGroups=platform&platform=linux&queryGroups=access-method&access-method=postgres)
-
-Installation de supabase-cli
-
-```bash
-# brew sur Linux https://brew.sh/
-brew install supabase/tap/supabase
-```
-
-Lancement des conteneurs Docker Supabase
-
-```bash
-# à la racine du dépôt
-supabase start
-```
-
-> [!NOTE]
->```bash
-># Mise à jour du fichier `.env`
->bash scripts/update-env.sh
->```
-> Modifiez le fichier `.env` à partir de la sortie de `supabase start` ou exécutez `supabase status` manuellement.
 
 ## Utilisation de l'API de stockage
 
@@ -105,24 +91,12 @@ curl -X GET "http://localhost:8000/api/v1/storage/file/FILE_ID/url" \
 
 ## Tests
 
-### Tests avec SQLite (mock)
+### Tests avec mocks (sans connexion externe)
 
 ```bash
 cd backend
 # Exécuter les tests unitaires avec des mocks
-python -m pytest tests/
-```
-
-### Tests avec Supabase local
-
-```bash
-cd backend
-# Lancer Supabase local
-supabase start
-# Test de connexion à la base de données et migration
-scripts/pre-start.sh
-# Tests unitaires
-scripts/test.sh
+MOCK_SUPABASE=true SKIP_DB_CHECK=true SKIP_ENV_CHECK=true python -m pytest tests/
 ```
 
 ### Tests avec Supabase Cloud
@@ -137,22 +111,17 @@ bash scripts/cloud-test.sh
 
 ## Lancement de l'application
 
-### Avec Supabase local
+### Localement (Python)
 
 ```bash
-# À la racine du projet
-supabase start
-
-# Dans le répertoire backend
 cd backend
 python -m app.main
 ```
 
-### Avec Supabase Cloud
+### Avec Docker Compose
 
 ```bash
-cd backend
-python -m app.main
+docker-compose up -d
 ```
 
 L'application est ensuite accessible à l'adresse http://localhost:8000 et la documentation Swagger à http://localhost:8000/docs
@@ -165,18 +134,13 @@ L'application est ensuite accessible à l'adresse http://localhost:8000 et la do
 Construction de l'image
 
 ```bash
-cd backend
 docker build -t acout/fastapi_supabase_template .
 ```
 
 Test de l'image
 
 ```bash
-bash scripts/update-env.sh
-supabase start
-cd backend
 docker run --network host \
-  --env-file ../.env \
-  -it acout/fastapi_supabase_template:latest \
-  bash -c "sh scripts/pre-start.sh && sh scripts/tests-start.sh"
+  --env-file .env \
+  -it acout/fastapi_supabase_template:latest
 ```
