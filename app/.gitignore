@@ -1,5 +1,0 @@
-# Ce dossier a été supprimé dans la refactorisation
-# Les fichiers pertinents ont été déplacés vers /backend/app
-# Ce fichier .gitignore est là pour indiquer que ce dossier doit être supprimé
-*
-!.gitignore
