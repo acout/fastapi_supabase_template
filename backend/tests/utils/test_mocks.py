@@ -1,1 +1,0 @@
-# Ce fichier a été supprimé car nous préférons utiliser l'environnement Supabase réel
