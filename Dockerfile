@@ -71,7 +71,7 @@ RUN --mount=type=cache,target=$UV_CACHE_DIR \
     echo "=== Site packages contents ===" && \
     ls -la /usr/local/lib/python3.12/site-packages/
 
-RUN if [ "$BUILD_ENV" = "test" ]; then \
+RUN if [ "$BUILD_ENV" = "test" -o "$BUILD_ENV" = "dev" ]; then \
     uv pip install --system -e ".[test]"; \
     fi
 
