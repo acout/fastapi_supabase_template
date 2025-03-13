@@ -1,8 +1,9 @@
 import os
+import subprocess
 import sys
 from pathlib import Path
+
 from dotenv import load_dotenv
-import subprocess
 
 
 def run_migration(environment: str, command: str, message: str = ""):

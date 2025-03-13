@@ -71,7 +71,7 @@ RUN --mount=type=cache,target=$UV_CACHE_DIR \
     echo "=== Site packages contents ===" && \
     ls -la /usr/local/lib/python3.12/site-packages/
 
-RUN if [ "$BUILD_ENV" = "test" ]; then \
+RUN if [ "$BUILD_ENV" = "test" -o "$BUILD_ENV" = "dev" ]; then \
     uv pip install --system -e ".[test]"; \
     fi
 
@@ -94,6 +94,6 @@ RUN if [ -n "$USERNAME" ] && [ "$BUILD_ENV" = "dev" ]; then \
 USER ${USERNAME:-root}
 WORKDIR /app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "80"]
 # If running behind a proxy like Nginx or Traefik add --proxy-headers
 # CMD ["fastapi", "run", "app/main.py", "--port", "80", "--proxy-headers"]
