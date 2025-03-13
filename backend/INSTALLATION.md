@@ -11,24 +11,14 @@ git clone https://github.com/acout/fastapi_supabase_template.git
 cd fastapi_supabase_template
 ```
 
-### 2. Nettoyer la structure (après refactorisation)
-
-Afin de s'assurer que la structure du projet est propre et ne contient pas de résidus de l'ancienne structure, exécutez:
-
-```bash
-cd backend
-bash scripts/cleanup-structure.sh
-cd ..
-```
-
-### 3. Installer les dépendances
+### 2. Installer les dépendances
 
 ```bash
 cd backend
 uv sync --all-groups --dev
 ```
 
-### 4. Configurer les variables d'environnement
+### 3. Configurer les variables d'environnement
 
 Copiez et modifiez le fichier d'exemple pour votre environnement:
 
@@ -36,6 +26,8 @@ Copiez et modifiez le fichier d'exemple pour votre environnement:
 cp .env.example .env
 # Éditez le fichier .env avec vos paramètres
 ```
+
+Pour les tests, créez un fichier `.env.test` adapté à votre environnement de test.
 
 ## Lancement
 
@@ -53,13 +45,6 @@ docker-compose up -d
 ```
 
 ## Tests
-
-### Tests avec mocks (sans connexion externe)
-
-```bash
-cd backend
-bash scripts/mock-test.sh
-```
 
 ### Tests avec Supabase Cloud
 
@@ -86,7 +71,6 @@ La structure du projet est organisée comme suit:
 │   │   └── main.py    # Point d'entrée de l'application
 │   ├── scripts/       # Scripts utilitaires
 │   ├── tests/         # Tests
-│   ├── .env.test      # Environnement de test
 │   └── pyproject.toml # Configuration du projet
 ├── .pre-commit-config.yaml   # Hooks pre-commit
 ├── Dockerfile         # Configuration Docker
