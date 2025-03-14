@@ -2,8 +2,11 @@ import asyncio
 import os
 import time
 import uuid
-
 import pytest
+
+# Importation du marqueur asyncio pour les tests asynchrones
+import pytest_asyncio
+
 from dotenv import load_dotenv
 from faker import Faker
 from supabase import create_client
@@ -22,24 +25,22 @@ except Exception as e:
 
 fake = Faker()
 
-
 # Fonction utilitaire pour les retry
 def retry_on_error(func, max_retries=3, delay=2, error_types=None):
     """Réessaie une fonction en cas d'erreur avec un délai entre les tentatives"""
     if error_types is None:
         error_types = Exception
-
+        
     for attempt in range(max_retries):
         try:
             return func()
         except error_types as e:
             if attempt < max_retries - 1:
-                print(f"Erreur (tentative {attempt + 1}/{max_retries}): {e}")
+                print(f"Erreur (tentative {attempt+1}/{max_retries}): {e}")
                 print(f"Réessai dans {delay} secondes...")
                 time.sleep(delay)
             else:
                 raise
-
 
 # Fonction pour vérifier et créer le bucket si nécessaire
 def ensure_bucket_exists(bucket_name):
@@ -47,17 +48,14 @@ def ensure_bucket_exists(bucket_name):
     try:
         # Client Supabase avec service_role
         supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
-
+        
         def check_bucket():
             # Vérifier si le bucket existe
-            headers = {
-                "apikey": settings.SUPABASE_SERVICE_KEY,
-                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
-            }
+            headers = {'apikey': settings.SUPABASE_SERVICE_KEY, 'Authorization': f'Bearer {settings.SUPABASE_SERVICE_KEY}'}
             response = supabase.storage.get_bucket(bucket_name)
             print(f"Bucket {bucket_name} existe déjà")
             return True
-
+            
         try:
             return retry_on_error(check_bucket)
         except Exception as e:
@@ -65,12 +63,10 @@ def ensure_bucket_exists(bucket_name):
                 try:
                     # Créer le bucket
                     def create_bucket():
-                        response = supabase.storage.create_bucket(
-                            bucket_name, {"public": True}
-                        )
+                        response = supabase.storage.create_bucket(bucket_name, {'public': True})
                         print(f"Bucket {bucket_name} créé avec succès")
                         return True
-
+                    
                     return retry_on_error(create_bucket)
                 except Exception as create_error:
                     print(f"Échec de création du bucket {bucket_name}: {create_error}")
@@ -81,7 +77,6 @@ def ensure_bucket_exists(bucket_name):
     except Exception as e:
         print(f"Erreur lors de l'initialisation du client Supabase: {e}")
         return False
-
 
 # Initialiser client Supabase avant les tests
 try:
@@ -102,20 +97,20 @@ def create_test_user(password: str = "testpass123!") -> dict:
         return supabase.auth.admin.create_user(
             {"email": email, "password": password, "email_confirm": True}
         )
-
+    
     # Utiliser retry pour la création d'utilisateur
     return retry_on_error(create_user)
 
 
+# Ajouter le marqueur pytest.mark.asyncio pour indiquer que c'est un test asynchrone
+@pytest.mark.asyncio
 async def test_rls_policies():
     """Test des politiques RLS"""
     # Vérifier si le bucket existe, le créer si nécessaire
     bucket_name = "profile-pictures"
     if not ensure_bucket_exists(bucket_name):
-        pytest.skip(
-            f"Impossible de créer/vérifier le bucket {bucket_name}, test ignoré"
-        )
-
+        pytest.skip(f"Impossible de créer/vérifier le bucket {bucket_name}, test ignoré")
+    
     user1 = None
     user2 = None
 
@@ -150,7 +145,7 @@ async def test_rls_policies():
             )
         except Exception as e:
             pytest.skip(f"Erreur lors de la connexion des utilisateurs: {e}")
-
+        
         # INSERT - Chaque utilisateur crée son profil avec gestion d'erreur
         try:
             profile1 = (
@@ -201,9 +196,7 @@ async def test_rls_policies():
             client1.table("profiles").update({"name": "Hacked!"}).eq(
                 "owner_id", user2.user.id
             ).execute()
-            assert False, (
-                "La mise à jour du profil d'un autre utilisateur devrait échouer"
-            )
+            assert False, "La mise à jour du profil d'un autre utilisateur devrait échouer"
         except Exception as e:
             print("Erreur attendue:", e)
 
@@ -211,9 +204,7 @@ async def test_rls_policies():
         # User2 essaie de supprimer le profil de User1 (devrait échouer)
         try:
             client2.table("profiles").delete().eq("owner_id", user1.user.id).execute()
-            assert False, (
-                "La suppression du profil d'un autre utilisateur devrait échouer"
-            )
+            assert False, "La suppression du profil d'un autre utilisateur devrait échouer"
         except Exception as e:
             print("Erreur attendue:", e)
 
@@ -244,7 +235,7 @@ async def test_rls_policies():
             # Ajout des métadonnées explicites
             file_size = os.path.getsize(test_file)
             print(f"File size: {file_size}")
-
+            
             def upload_file():
                 return client1.storage.from_(bucket_name).upload(
                     path1,
@@ -259,7 +250,7 @@ async def test_rls_policies():
                         },
                     },
                 )
-
+            
             # Utiliser retry pour l'upload qui peut être sensible aux erreurs transitoires
             retry_on_error(upload_file)
         except Exception as e:
@@ -268,9 +259,7 @@ async def test_rls_policies():
         # User2 essaie d'accéder au fichier de User1 (devrait échouer)
         try:
             client2.storage.from_(bucket_name).download(path1)
-            assert False, (
-                "Le téléchargement du fichier d'un autre utilisateur devrait échouer"
-            )
+            assert False, "Le téléchargement du fichier d'un autre utilisateur devrait échouer"
         except Exception as e:
             print("Erreur attendue:", e)
 
@@ -303,5 +292,6 @@ async def test_rls_policies():
                 print(f"Erreur lors de la suppression de l'utilisateur 2: {e}")
 
 
+# Si le script est exécuté directement, utiliser asyncio.run
 if __name__ == "__main__":
     asyncio.run(test_rls_policies())
