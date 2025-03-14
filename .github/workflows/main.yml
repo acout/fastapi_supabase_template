@@ -14,7 +14,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      workflows: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,26 +43,26 @@ jobs:
           pre-commit run --all-files
           pre_commit_status=$?
           set -e
-          
+
           # Si des modifications ont été effectuées
           if [ $pre_commit_status -eq 1 ]; then
             echo "Pre-commit a corrigé des problèmes de formatage. Commit des changements..."
-            
+
             # Configurer Git
             git config --local user.email "actions@github.com"
             git config --local user.name "GitHub Actions"
-            
+
             # Commit et push
             git add -A
             git commit -m "[STYLE] Correction automatique du formatage (pre-commit)"
             git push
-            
+
             # Message pour les logs
             echo "✅ Corrections de formatage effectuées et poussées sur la branche."
           else
             echo "✅ Aucun problème de formatage détecté."
           fi
-      
+
       # Pour les push directs (non PR), juste vérifier sans auto-correction
       - name: Run pre-commit checks only
         if: github.event_name != 'pull_request'
