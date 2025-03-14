@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       # Créer le fichier .env.test avant le build
       - name: Generate .env.test file
         run: |
@@ -54,7 +54,7 @@ jobs:
           FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD }}
           EOF
           echo "Created .env.test file with CI credentials"
-      
+
       # Installation temporaire pour la vérification de Supabase
       - name: Verify Supabase Connection
         run: |
@@ -71,7 +71,7 @@ jobs:
             -v $(pwd)/backend:/app/backend \
             fastapi-supabase-template:test \
             bash -c "cd /app/backend && python -m pytest --cov=app --cov-report=xml -v"
-          
+
           # Copier les résultats de couverture depuis le conteneur
           docker cp $(docker ps -lq):/app/backend/coverage.xml ./backend/coverage.xml
 
