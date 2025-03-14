@@ -10,8 +10,17 @@ jobs:
   quality:
     name: Lint and Format
     runs-on: ubuntu-latest
+    # Ajouter les permissions nécessaires pour auto-commit
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          # Nécessaire pour pouvoir push des modifications
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -26,8 +35,59 @@ jobs:
       - name: Install pre-commit
         run: uv pip install pre-commit --system
 
-      - name: Run pre-commit checks
-        run: pre-commit run --all-files
+      - name: Run pre-commit checks with auto-fix
+        id: pre-commit
+        run: |
+          # Exécuter pre-commit et capturer le résultat
+          set +e
+          output=$(pre-commit run --all-files)
+          exit_code=$?
+          set -e
+          
+          echo "Pre-commit exit code: $exit_code"
+          echo "$output"
+          
+          # Vérifier si des fichiers ont été modifiés
+          if [ $exit_code -eq 1 ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+      
+      # Auto-commit des corrections si nécessaire (PR uniquement)
+      - name: Commit formatting changes
+        if: |
+          steps.pre-commit.outputs.changes == 'true' && 
+          github.event_name == 'pull_request' && 
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          # Configurer Git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          
+          # Ajouter les fichiers modifiés et commiter
+          git add -A
+          git commit -m "[STYLE] Correction automatique du formatage (pre-commit)"
+          
+          # Pousser les changements sur la branche de la PR
+          git push
+      
+      # Ajouter un commentaire à la PR
+      - name: Add comment to PR about formatting changes
+        if: |
+          steps.pre-commit.outputs.changes == 'true' && 
+          github.event_name == 'pull_request' && 
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✨ Style: J\'ai automatiquement corrigé les problèmes de formatage dans cette PR. Les corrections ont été commitées directement sur cette branche.'
+            })
 
   # Création de l'image Docker et exécution des tests
   build-and-test:
