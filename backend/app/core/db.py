@@ -1,8 +1,8 @@
 from collections.abc import Generator
 
 from sqlmodel import Session, create_engine, select
-from supabase import create_client
 
+from app.core.auth import get_super_client
 from app.core.config import settings
 from app.models import User
 
@@ -18,7 +18,7 @@ def get_db() -> Generator[Session, None]:
         yield session
 
 
-def init_db(session: Session) -> None:
+async def init_db(session: Session) -> None:
     # Tables should be created with Alembic migrations
     # But if you don't want to use migrations, create
     # the tables un-commenting the next lines
@@ -29,7 +29,7 @@ def init_db(session: Session) -> None:
     result = session.exec(select(User).where(User.email == settings.FIRST_SUPERUSER))
     user = result.first()
     if not user:
-        super_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        super_client = await get_super_client()
         response = super_client.auth.sign_up(
             {
                 "email": settings.FIRST_SUPERUSER,

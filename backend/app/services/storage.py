@@ -92,9 +92,10 @@ class StorageService:
                 )
 
             # Upload le fichier
+            file_io = BytesIO(file_content)
             response = await self.client.storage.from_(bucket_class.name).upload(
                 path=file_path,
-                file=file_content,
+                file=file_io,
                 file_options={"content-type": file.content_type},
             )
 

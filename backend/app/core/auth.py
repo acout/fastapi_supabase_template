@@ -24,19 +24,14 @@ async def get_super_client() -> AsyncClient:
     return super_client
 
 
-SuperClient = Annotated[AsyncClient, Depends(get_super_client)]
-
-
 # auto get token from header
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
-)
-TokenDep = Annotated[str, Depends(reusable_oauth2)]
+auth_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
+TokenDep = Annotated[str, Depends(auth_scheme)]
 
 
-async def get_current_user(token: TokenDep, super_client: SuperClient) -> UserIn:
-    """get current user from token and  validate same time"""
-    user_rsp = await super_client.auth.get_user(jwt=token)
+async def get_current_user(token: TokenDep, client=Depends(get_super_client)) -> UserIn:
+    """get current user from token and validate same time"""
+    user_rsp = await client.auth.get_user(jwt=token)
     if not user_rsp:
         logging.error("User not found")
         raise HTTPException(status_code=404, detail="User not found")
