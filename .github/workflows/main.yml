@@ -10,16 +10,16 @@ jobs:
   quality:
     name: Lint and Format
     runs-on: ubuntu-latest
-    # Ajouter les permissions nécessaires pour auto-commit
+    # Ajouter la permission workflows au niveau du job
     permissions:
       contents: write
       pull-requests: write
+      workflows: write
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-          # Nécessaire pour pouvoir push des modifications
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install uv
@@ -35,59 +35,39 @@ jobs:
       - name: Install pre-commit
         run: uv pip install pre-commit --system
 
-      - name: Run pre-commit checks with auto-fix
-        id: pre-commit
+      # Une seule étape qui gère tout le processus de pre-commit et d'auto-correction
+      - name: Run pre-commit with auto-fix
+        if: github.event_name == 'pull_request'
         run: |
-          # Exécuter pre-commit et capturer le résultat
+          # Exécuter pre-commit
           set +e
-          output=$(pre-commit run --all-files)
-          exit_code=$?
+          pre-commit run --all-files
+          pre_commit_status=$?
           set -e
           
-          echo "Pre-commit exit code: $exit_code"
-          echo "$output"
-          
-          # Vérifier si des fichiers ont été modifiés
-          if [ $exit_code -eq 1 ]; then
-            echo "changes=true" >> $GITHUB_OUTPUT
+          # Si des modifications ont été effectuées
+          if [ $pre_commit_status -eq 1 ]; then
+            echo "Pre-commit a corrigé des problèmes de formatage. Commit des changements..."
+            
+            # Configurer Git
+            git config --local user.email "actions@github.com"
+            git config --local user.name "GitHub Actions"
+            
+            # Commit et push
+            git add -A
+            git commit -m "[STYLE] Correction automatique du formatage (pre-commit)"
+            git push
+            
+            # Message pour les logs
+            echo "✅ Corrections de formatage effectuées et poussées sur la branche."
           else
-            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "✅ Aucun problème de formatage détecté."
           fi
       
-      # Auto-commit des corrections si nécessaire (PR uniquement)
-      - name: Commit formatting changes
-        if: |
-          steps.pre-commit.outputs.changes == 'true' && 
-          github.event_name == 'pull_request' && 
-          github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          # Configurer Git
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          
-          # Ajouter les fichiers modifiés et commiter
-          git add -A
-          git commit -m "[STYLE] Correction automatique du formatage (pre-commit)"
-          
-          # Pousser les changements sur la branche de la PR
-          git push
-      
-      # Ajouter un commentaire à la PR
-      - name: Add comment to PR about formatting changes
-        if: |
-          steps.pre-commit.outputs.changes == 'true' && 
-          github.event_name == 'pull_request' && 
-          github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '✨ Style: J\'ai automatiquement corrigé les problèmes de formatage dans cette PR. Les corrections ont été commitées directement sur cette branche.'
-            })
+      # Pour les push directs (non PR), juste vérifier sans auto-correction
+      - name: Run pre-commit checks only
+        if: github.event_name != 'pull_request'
+        run: pre-commit run --all-files
 
   # Création de l'image Docker et exécution des tests
   build-and-test:
